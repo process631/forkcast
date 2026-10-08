@@ -1,8 +1,10 @@
-import { cuisineForCountry } from '../data/taxonomy';
-import { estimateDifficulty, estimateMinutes, ingredientImage, splitInstructions, youtubeId } from './parse';
+import { buildItem, type LibraryItem } from './item';
 import type { Source } from './library';
 import { fetchByLetter, fetchJson } from './net';
-import type { Ingredient, Recipe } from './types';
+import { ingredientImage } from './parse';
+import type { Ingredient } from './types';
+
+export type { LibraryItem } from './item';
 
 /**
  * TheMealDB (https://www.themealdb.com) — a free recipe API with ~800 recipes, photos and videos.
@@ -23,20 +25,6 @@ export interface RawMeal {
   strYoutube: string | null;
   strSource: string | null;
   [key: string]: string | null | undefined;
-}
-
-/** A library recipe plus lower-cased text used by the matching engine. */
-export interface LibraryItem {
-  recipe: Recipe;
-  title: string;
-  category: string;
-  tags: string[];
-  ingredientNames: string[];
-  /** Ingredient names without stocks/sauces, for "main ingredient" checks. */
-  mainIngredients: string;
-  /** Everything (title, tags, ingredients, instructions) for keyword checks. */
-  text: string;
-  country: string;
 }
 
 /** Adjective-style cuisine labels for the newer TheMealDB entries that only have a country. */
@@ -64,40 +52,20 @@ export function normalizeMeal(m: RawMeal): LibraryItem {
     if (!name) continue;
     ingredients.push({ name, measure: (m[`strMeasure${i}`] || '').trim(), image: ingredientImage(name) });
   }
-  const steps = splitInstructions(m.strInstructions || '');
-  const instructions = m.strInstructions || '';
-  const { total, passive } = estimateMinutes(ingredients.length, steps);
-  const tags = (m.strTags || '').split(',').map((t) => t.trim()).filter(Boolean);
-  const country = m.strCountry || '';
-  const recipe: Recipe = {
+  return buildItem({
     id: `mdb-${m.idMeal}`,
-    title: m.strMeal.trim(),
+    source: 'mealdb',
+    title: m.strMeal,
     image: m.strMealThumb || undefined,
     category: m.strCategory || undefined,
-    cuisine: cuisineLabel(m.strArea, country),
-    cuisineGroup: cuisineForCountry(country)?.id,
-    tags,
-    totalMinutes: total,
-    hasPassiveTime: passive,
-    difficulty: estimateDifficulty(ingredients.length, steps.length, instructions, total),
+    cuisine: cuisineLabel(m.strArea, m.strCountry),
+    country: m.strCountry || '',
+    tags: (m.strTags || '').split(',').map((t) => t.trim()).filter(Boolean),
     ingredients,
-    steps,
-    youtube: youtubeId(m.strYoutube),
+    instructions: m.strInstructions || '',
+    youtube: m.strYoutube,
     sourceUrl: m.strSource || undefined,
-  };
-  const ingredientNames = ingredients.map((i) => i.name.toLowerCase());
-  const mainIngredients = ingredientNames.filter((n) => !/\b(stock|broth|bouillon|cubes?|gravy|sauce|fat|dripping|granules)\b/.test(n)).join(' | ');
-  const title = recipe.title.toLowerCase();
-  return {
-    recipe,
-    title,
-    category: recipe.category || '',
-    tags: tags.map((t) => t.toLowerCase()),
-    ingredientNames,
-    mainIngredients,
-    text: [title, tags.join(' '), ingredientNames.join(' '), instructions].join(' \n ').toLowerCase(),
-    country,
-  };
+  });
 }
 
 type MealsResponse = { meals: RawMeal[] | null };

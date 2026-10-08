@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { copyText } from '../lib/clipboard';
+import { SOURCE_NAMES } from '../lib/item';
 import { cookbookStore, toggleSaved, useStore } from '../lib/store';
 import type { Recipe } from '../lib/types';
 import { useRecipe } from '../lib/useRecipe';
@@ -82,9 +83,10 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
       <header className="recipe-header">
         <DishHero recipe={recipe} />
         <div className="recipe-intro">
-          <p className="eyebrow">📚 {recipe.category ?? 'Recipe'} · TheMealDB</p>
+          <p className="eyebrow">{recipe.kind === 'drink' ? '🍹' : '📚'} {recipe.category ?? 'Recipe'} · {SOURCE_NAMES[recipe.source ?? 'mealdb']}</p>
           <h1 className="recipe-title">{recipe.title}</h1>
           <RecipeMeta recipe={recipe} />
+          {recipe.note && <p className="muted">{recipe.note}</p>}
           <div className="recipe-actions no-print">
             <a href={href(`/cook/${recipe.id}`)} className="btn btn-primary btn-lg">
               👩‍🍳 Start cooking

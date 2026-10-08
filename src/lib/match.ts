@@ -1,6 +1,6 @@
 import { CUISINES, MOODS, TIMES, getCategory, type CategoryDef, type MatchOption } from '../data/taxonomy';
 import { hasFish, hasMeat, mentionsAny, violatesDiet } from './diet';
-import type { LibraryItem } from './mealdb';
+import type { LibraryItem } from './item';
 import { formatMinutes } from './parse';
 import type { Answers, MealId, Suggestion } from './types';
 
@@ -61,6 +61,8 @@ export function mealFit(item: LibraryItem, meal: MealId | null): number {
       return 0.3;
     case 'dessert':
       return sweet ? 3 : 0;
+    case 'drink':
+      return item.kind === 'drink' ? 3 : 0;
   }
 }
 
@@ -134,6 +136,8 @@ function jitter(seed: number, id: string): number {
 
 export function scoreItem(item: LibraryItem, a: Answers, seed = 0): Scored | null {
   const r = item.recipe;
+  // Drinks only for the Drinks meal, food for everything else.
+  if ((item.kind === 'drink') !== (a.meal === 'drink')) return null;
   // Hard filters: diets and things to avoid.
   if (violatesDiet(item.ingredientNames, a.diets, item.category)) return null;
   if (a.avoid.length && mentionsAny(item.ingredientNames, a.avoid).length) return null;
@@ -303,6 +307,6 @@ export function matchLibrary(
 
 /** A random crowd-pleaser for the "Surprise me" button. */
 export function randomPick(library: LibraryItem[], answers?: Partial<Answers>): LibraryItem | undefined {
-  const pool = library.filter((i) => i.recipe.image && i.recipe.steps.length >= 2 && !violatesDiet(i.ingredientNames, answers?.diets ?? [], i.category));
+  const pool = library.filter((i) => i.kind === 'food' && i.recipe.image && i.recipe.steps.length >= 2 && !violatesDiet(i.ingredientNames, answers?.diets ?? [], i.category));
   return pool[Math.floor(Math.random() * pool.length)];
 }

@@ -53,6 +53,9 @@ export function Settings() {
           <li>
             Recipes, dish photos, ingredient pictures and videos: <a href="https://www.themealdb.com" target="_blank" rel="noreferrer">TheMealDB</a> (free API)
           </li>
+          <li>
+            More recipes from around the world: <a href="https://dummyjson.com/docs/recipes" target="_blank" rel="noreferrer">DummyJSON</a> (free API)
+          </li>
         </ul>
       </section>
     </div>

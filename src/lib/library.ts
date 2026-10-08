@@ -1,4 +1,6 @@
-import { mealdbSource, type LibraryItem } from './mealdb';
+import type { LibraryItem } from './item';
+import { dummyjsonSource } from './dummyjson';
+import { mealdbSource } from './mealdb';
 import { NetworkError, isOffline } from './net';
 import { idbGet, idbSet } from './storage';
 import type { Recipe } from './types';
@@ -88,7 +90,7 @@ async function loadSource<Raw>(src: Source<Raw>): Promise<SourceResult> {
 }
 
 /** Every recipe source, in the order their recipes are listed. */
-const SOURCES: Source<unknown>[] = [mealdbSource as Source<unknown>];
+const SOURCES = [mealdbSource, dummyjsonSource] as Source<unknown>[];
 
 let libraryPromise: Promise<LibraryItem[]> | null = null;
 

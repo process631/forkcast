@@ -1,4 +1,4 @@
-export type MealId = 'breakfast' | 'lunch' | 'dinner' | 'side' | 'snack' | 'dessert';
+export type MealId = 'breakfast' | 'lunch' | 'dinner' | 'side' | 'snack' | 'dessert' | 'drink';
 
 export type TimeId = 'quick' | 'medium' | 'long' | 'any';
 export type SkillId = 'easy' | 'medium' | 'hard' | 'any';
@@ -32,9 +32,16 @@ export interface Step {
   minutes?: number;
 }
 
+export type RecipeSource = 'mealdb' | 'dummyjson' | 'cocktaildb';
+export type RecipeKind = 'food' | 'drink';
+
 export interface Recipe {
-  /** 'mdb-<id>' for TheMealDB recipes. */
+  /** Prefixed by source: 'mdb-<id>' TheMealDB, 'djr-<id>' DummyJSON, 'cdb-<id>' TheCocktailDB. */
   id: string;
+  /** Missing on copies saved by older versions, which were all TheMealDB. */
+  source?: RecipeSource;
+  /** Missing on older saved copies, which were all food. */
+  kind?: RecipeKind;
   title: string;
   image?: string;
   category?: string;
@@ -50,6 +57,8 @@ export interface Recipe {
   steps: Step[];
   youtube?: string;
   sourceUrl?: string;
+  /** A serving tip shown on the recipe page, e.g. which glass a drink goes in. */
+  note?: string;
 }
 
 /** A recipe picked for the person's answers, with the reasons it fits. */
