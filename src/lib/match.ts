@@ -293,7 +293,6 @@ export function matchLibrary(
   return {
     poolSize: strict.length,
     suggestions: picked.map((s) => ({
-      kind: 'library' as const,
       recipe: s.item.recipe,
       reasons: s.close ? ['Close match', ...s.reasons].slice(0, 4) : s.reasons,
       score: s.score,

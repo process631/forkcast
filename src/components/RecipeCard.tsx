@@ -1,26 +1,14 @@
-import { useEffect } from 'react';
-import { imageCacheKey } from '../lib/ai';
-import { imagesStore, loadCachedImage } from '../lib/images';
 import { formatMinutes } from '../lib/parse';
-import { useStore } from '../lib/store';
-import type { AiIdea, Recipe, Suggestion } from '../lib/types';
+import type { Recipe, Suggestion } from '../lib/types';
 import { href } from '../router';
 import { Chip, EmojiArt, Img } from './ui';
 
-/** Photo for a recipe: library photo, cached AI photo, free photo, or emoji art. */
+/** Photo for a recipe, or colorful emoji art if it's missing. */
 export function DishThumb({ recipe, className = '' }: { recipe: Recipe; className?: string }) {
-  const images = useStore(imagesStore);
-  const ai = images[imageCacheKey(recipe.id, 'dish')];
-  useEffect(() => {
-    if (recipe.source === 'ai') void loadCachedImage(recipe, 'dish');
-  }, [recipe]);
-  const src = ai?.url || recipe.image;
-  const art = <EmojiArt emoji={recipe.emoji} title={recipe.title} className={className} />;
-  return <Img src={src} alt={recipe.title} className={className} fallback={art} />;
+  return <Img src={recipe.image} alt={recipe.title} className={className} fallback={<EmojiArt title={recipe.title} className={className} />} />;
 }
 
 export function SuggestionCard({ suggestion, index }: { suggestion: Suggestion; index: number }) {
-  if (suggestion.kind === 'ai') return <IdeaCard idea={suggestion.idea} index={index} />;
   const { recipe, reasons, close } = suggestion;
   return (
     <a href={href(`/recipe/${recipe.id}`)} className="card suggestion-card" style={{ animationDelay: `${index * 60}ms` }}>
@@ -49,33 +37,6 @@ export function SuggestionCard({ suggestion, index }: { suggestion: Suggestion; 
   );
 }
 
-function IdeaCard({ idea, index }: { idea: AiIdea; index: number }) {
-  return (
-    <a href={href(`/recipe/ai-${idea.key}`)} className="card suggestion-card idea-card" style={{ animationDelay: `${index * 60}ms` }}>
-      <div className="card-media">
-        <EmojiArt emoji={idea.emoji} title={idea.title} className="card-img" />
-        <span className="media-badge media-badge-ai">✨ Gemini</span>
-      </div>
-      <div className="card-body">
-        <h3 className="card-title">{idea.title}</h3>
-        <p className="card-desc">{idea.description}</p>
-        <div className="meta-row">
-          <Chip>⏱️ {formatMinutes(idea.totalMinutes)}</Chip>
-          <Chip>{idea.difficulty}</Chip>
-          {idea.cuisine && <Chip>{idea.cuisine}</Chip>}
-        </div>
-        {idea.reasons.length > 0 && (
-          <ul className="reasons" aria-label="Why it matches">
-            {idea.reasons.map((r) => (
-              <li key={r}>✓ {r}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </a>
-  );
-}
-
 export function SkeletonCard() {
   return (
     <div className="card suggestion-card skeleton" aria-hidden="true">
@@ -96,7 +57,6 @@ export function RecipeTile({ recipe, onRemove }: { recipe: Recipe; onRemove?: ()
       <a href={href(`/recipe/${recipe.id}`)} className="tile-link">
         <div className="tile-media">
           <DishThumb recipe={recipe} className="tile-img" />
-          {recipe.source === 'ai' && <span className="media-badge media-badge-ai">✨</span>}
         </div>
         <span className="tile-title">{recipe.title}</span>
         <span className="tile-meta">

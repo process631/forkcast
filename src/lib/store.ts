@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { readJSON, writeJSON } from './storage';
-import type { AiIdea, Answers, Recipe, Settings, Suggestion } from './types';
+import type { Answers, Recipe, Suggestion } from './types';
 
 /** A tiny observable store, optionally persisted to local/session storage. */
 export function createStore<T>(initial: T, persist?: { key: string; storage?: 'local' | 'session' }) {
@@ -26,32 +26,6 @@ export function useStore<T>(store: ReturnType<typeof createStore<T>>): T {
   return useSyncExternalStore(store.subscribe, store.get, store.get);
 }
 
-/* ------------------------------ Settings ------------------------------ */
-
-export const DEFAULT_TEXT_MODEL = 'gemini-3.8-flash';
-export const DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image';
-
-export const settingsStore = createStore<Settings>(
-  // AI pictures are off by default: they're paid-only on the Gemini API.
-  { aiMode: 'app', geminiKey: '', textModel: DEFAULT_TEXT_MODEL, imageModel: DEFAULT_IMAGE_MODEL, aiIdeas: true, aiImages: 'off' },
-  { key: 'forkcast.settings' },
-);
-
-// Settings saved before AI modes existed: a saved key meant the API was in use.
-if (!readJSON<Partial<Settings>>('forkcast.settings', {}).aiMode && settingsStore.get().geminiKey) {
-  settingsStore.set((s) => ({ ...s, aiMode: 'api' }));
-}
-
-/** Automatic AI through the Gemini API (needs a key). */
-export function aiEnabled(s: Settings = settingsStore.get()): boolean {
-  return s.aiMode === 'api' && Boolean(s.geminiKey.trim());
-}
-
-/** Copy & paste with the Gemini app. */
-export function appMode(s: Settings = settingsStore.get()): boolean {
-  return s.aiMode === 'app';
-}
-
 /* ------------------------------ Wizard ------------------------------ */
 
 export const EMPTY_ANSWERS: Answers = {
@@ -65,7 +39,6 @@ export const EMPTY_ANSWERS: Answers = {
   diets: [],
   include: [],
   avoid: [],
-  servings: 2,
 };
 
 export const answersStore = createStore<Answers>(EMPTY_ANSWERS, { key: 'forkcast.answers', storage: 'session' });
@@ -93,26 +66,7 @@ export function answersFingerprint(a: Answers): string {
   return JSON.stringify(a);
 }
 
-/** AI ideas by key, so the recipe page can generate the full recipe after a refresh. */
-export const ideasStore = createStore<Record<string, { idea: AiIdea; answers: Answers }>>({}, { key: 'forkcast.ideas', storage: 'session' });
-
-/* ------------------------------ Recipes ------------------------------ */
-
-const MAX_AI_RECIPES = 40;
-
-export const aiRecipesStore = createStore<{ order: string[]; byId: Record<string, Recipe> }>(
-  { order: [], byId: {} },
-  { key: 'forkcast.aiRecipes' },
-);
-
-export function rememberAiRecipe(recipe: Recipe) {
-  aiRecipesStore.set((prev) => {
-    const order = [recipe.id, ...prev.order.filter((id) => id !== recipe.id)];
-    const byId = { ...prev.byId, [recipe.id]: recipe };
-    for (const id of order.splice(MAX_AI_RECIPES)) delete byId[id];
-    return { order, byId };
-  });
-}
+/* ------------------------------ Cookbook ------------------------------ */
 
 export interface CookbookEntry {
   recipe: Recipe;
@@ -123,10 +77,6 @@ export const cookbookStore = createStore<{ saved: CookbookEntry[]; recent: Cookb
   { saved: [], recent: [] },
   { key: 'forkcast.cookbook' },
 );
-
-export function isSaved(id: string): boolean {
-  return cookbookStore.get().saved.some((e) => e.recipe.id === id);
-}
 
 export function toggleSaved(recipe: Recipe) {
   cookbookStore.set((prev) => {
@@ -142,17 +92,8 @@ export function addRecent(recipe: Recipe) {
   cookbookStore.set((prev) => ({
     ...prev,
     recent: [{ recipe, at: Date.now() }, ...prev.recent.filter((e) => e.recipe.id !== recipe.id)].slice(0, 24),
-    // Keep saved copies fresh (e.g. a photo found later).
+    // Keep saved copies fresh.
     saved: prev.saved.map((e) => (e.recipe.id === recipe.id ? { ...e, recipe } : e)),
-  }));
-}
-
-/** Save a changed recipe (e.g. a photo was found) everywhere a copy is kept. */
-export function updateRecipeEverywhere(recipe: Recipe) {
-  if (recipe.source === 'ai') rememberAiRecipe(recipe);
-  cookbookStore.set((prev) => ({
-    saved: prev.saved.map((e) => (e.recipe.id === recipe.id ? { ...e, recipe } : e)),
-    recent: prev.recent.map((e) => (e.recipe.id === recipe.id ? { ...e, recipe } : e)),
   }));
 }
 

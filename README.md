@@ -1,5 +1,7 @@
 # 🍴 Forkcast: "What should I cook?"
 
+**Live site: <https://process631.github.io/forkcast/>**
+
 Forkcast helps you decide what to cook and then walks you through it step by step:
 
 1. **Pick a meal**: Breakfast & Brunch, Lunch, Dinner, Side Dish, Snack & Appetizer, or Dessert.
@@ -19,7 +21,7 @@ Forkcast helps you decide what to cook and then walks you through it step by ste
    - an embedded video
    - a full-screen **cook mode** that keeps your screen on
 
-It works **free out of the box** with 790+ real recipes from [TheMealDB](https://www.themealdb.com). Turn on the **Gemini AI chef** to get recipes made for your exact answers, plus pictures of the dish and each step. It can run on your own Gemini app plan (copy & paste, no key, no cost) or automatically with a free API key.
+It's free with no sign-up, using 790+ real recipes from [TheMealDB](https://www.themealdb.com).
 
 ## Run it
 
@@ -42,53 +44,26 @@ Then open <http://localhost:5173>.
 
 ### Open it on your phone
 
+The easiest way is the live site, which works on any phone. To test your local copy instead:
+
 1. Run `npm run dev:host`. (With plain npm, the flag needs `--` first: `npm run dev -- --host`.)
 2. Vite prints a **Network** address, e.g. `http://192.168.1.4:5173`. Open it on your phone. It must be on the same Wi-Fi.
 3. If it doesn't load, Windows Firewall is probably blocking Node.js. Allow it on **private** networks.
 
-On a local-network address, phone browsers limit two features. Copy buttons may not work, so Forkcast then shows the text for you to copy by hand. Cook mode can't keep the screen awake. To get both, deploy the site to an https host such as Netlify or Vercel.
+On a local-network address, phone browsers don't let cook mode keep the screen awake. The live site (https) doesn't have this limit.
 
-## Use Gemini (optional, free)
+## Publishing (GitHub Pages)
 
-Forkcast can use Google Gemini in three ways. Choose one in **Settings → AI chef**.
+Every push to `main` runs `.github/workflows/deploy.yml`, which:
 
-### 💬 Gemini app (default): uses your Gemini plan, no key, no cost
+1. installs dependencies
+2. runs the tests
+3. builds the site
+4. publishes it to GitHub Pages
 
-Best if you have Gemini Pro (or just a Google account).
+The site uses relative paths (`base: './'` in `vite.config.ts`) and `#/…` page addresses, so it works from the `/forkcast/` sub-folder without any server setup.
 
-1. After the questions, press **Copy prompt & open Gemini**. Paste the prompt into a new chat on [gemini.google.com](https://gemini.google.com/app) and send it.
-2. Press the copy button under Gemini's answer and paste the reply into Forkcast. You get **3 complete recipes** made for your answers.
-3. **Pictures:** on a recipe, press **Make a Gemini picture** (or **Picture this step**).
-   - Paste the picture prompt into Gemini.
-   - Then drag Gemini's picture into Forkcast, paste it with Ctrl+V, or choose the downloaded file.
-   - Pictures are saved on your device.
-
-This runs on your normal Gemini app usage, so your plan's limits apply and there's nothing extra to pay. Other apps can't use a Gemini Pro plan directly; Google only allows that inside its own apps. That's why this mode uses copy & paste.
-
-### 🔑 API key: automatic
-
-1. Create a key at [Google AI Studio → API keys](https://aistudio.google.com/apikey).
-2. Paste it in **Settings** and press **Save**. Forkcast tests it and picks models your key can use.
-
-- **Free as long as you don't add billing.** A key whose Google Cloud project has no billing account can't be charged. When you reach the daily limit, Gemini just answers "quota reached".
-- **Free tier covers recipes, not pictures.** AI recipe ideas work on the free tier. AI pictures through the API are paid-only, so keep **AI photos: Off** (the default) unless you turn on billing. Google AI Pro includes a monthly Google Cloud credit that can pay for this, but it requires a billing account.
-- **Where the key lives.** It's stored only in your browser and sent only to Google.
-- **Models.** Model names change often. Forkcast falls back automatically (for example `gemini-3.8-flash` → `gemini-3.5-flash`) and remembers the first one that works.
-
-### 📚 Off
-
-Only the free recipe library.
-
-## Where the pictures come from
-
-| Picture | Source |
-|---|---|
-| Library recipe photos and videos | TheMealDB |
-| Ingredient pictures (in the checklist and each step) | TheMealDB ingredient images |
-| Photos for AI recipes when AI images are off | Wikimedia Commons / Openverse (credited under the photo) |
-| AI dish and step pictures | Made in the Gemini app and dropped in, or the Gemini API (paid). Saved on your device |
-
-## How it picks recipes (free mode)
+## How it picks recipes
 
 All of this lives in `src/lib/match.ts`:
 
@@ -115,28 +90,26 @@ src/
     diet.ts             diet / allergy checks
     match.ts            the recommendation engine
     questions.ts        which question screens to show
-    gemini.ts           Gemini REST client (JSON + images, model fallback, errors)
-    ai.ts               AI chef prompts, schemas, Gemini-app hand-off, image prompts & caching
-    images.ts           live AI image state + a small request queue
-    photos.ts           free Creative Commons photo search
-    store.ts            app state (settings, answers, results, cookbook, timers)
-    useRecipe.ts        loads a recipe from the library, the device, or the AI chef
-  components/           Home, Wizard, Results, RecipePage, CookMode, Cookbook, Settings, GeminiHandoff…
+    store.ts            app state (answers, results, cookbook, timers)
+    useRecipe.ts        loads a recipe from the library (or a saved copy when offline)
+  components/           Home, Wizard, Results, RecipePage, CookMode, Cookbook, Settings…
 PLAN.md                 the original plan and research notes
 ```
+
+## AI features (removed for now)
+
+An earlier version had an optional Google Gemini "AI chef":
+
+- AI-written recipes, either by copy & paste with the Gemini app or through the Gemini API
+- AI pictures of each dish and step
+
+They were taken out to keep the app simple. The full AI version is saved in git commit `f14113e`.
 
 ## Troubleshooting
 
 - **The page didn't change after editing code.** On Windows, Vite's file watcher occasionally misses quick edits. Stop the dev server (Ctrl+C) and run `npm run dev` again.
 - **"Couldn't load the recipe library."** Check your internet connection. After the first load, the library is cached for a week.
-- **Gemini’s reply won’t paste in.** Use the copy button under Gemini’s whole answer (not just part of it). If Gemini answered in plain text, ask it: “Please reply with only the JSON code block”.
-- **The AI chef shows an error (API mode).** Open **Settings → Test connection**. Common causes:
-  - mistyped key
-  - rate limit, so wait a minute
-  - image generation without billing turned on (use the Gemini app for pictures instead)
 
 ## Credits
 
-- Recipes, photos, ingredient pictures and videos: [TheMealDB](https://www.themealdb.com). Its free developer key is for personal and educational use.
-- Free photos: [Wikimedia Commons](https://commons.wikimedia.org) and [Openverse](https://openverse.org).
-- AI: [Google Gemini API](https://ai.google.dev).
+Recipes, photos, ingredient pictures and videos: [TheMealDB](https://www.themealdb.com). Its free developer key is for personal and educational use.

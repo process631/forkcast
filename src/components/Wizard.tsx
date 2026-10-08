@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CUISINES, DIETS, MEALS, MOODS, QUICK_INGREDIENTS, SERVINGS, SKILLS, TIMES, categoriesForMeal, getCategory, getMeal, type Option } from '../data/taxonomy';
+import { CUISINES, DIETS, MEALS, MOODS, QUICK_INGREDIENTS, SKILLS, TIMES, categoriesForMeal, getCategory, getMeal, type Option } from '../data/taxonomy';
 import { buildScreens, type Screen } from '../lib/questions';
-import { aiEnabled, answersStore, appMode, dietMemory, settingsStore, useStore } from '../lib/store';
+import { answersStore, dietMemory, useStore } from '../lib/store';
 import type { Answers, MealId } from '../lib/types';
 import { goBack, navigate } from '../router';
 
 /** Routes: /plan (meal) → /plan/kind (category) → /plan/q/0..n (questions) → /results */
 export function Wizard({ params }: { params: string[] }) {
   const answers = useStore(answersStore);
-  const settings = useStore(settingsStore);
-  const screens = buildScreens(answers, (aiEnabled(settings) && settings.aiIdeas) || appMode(settings));
+  const screens = buildScreens(answers);
   const totalSteps = 2 + screens.length;
 
   const update = (patch: Partial<Answers>) => answersStore.set((prev) => ({ ...prev, ...patch }));
@@ -276,23 +275,6 @@ function QuestionScreen({ screen, answers, update, next }: { screen: Screen; ans
             placeholder="e.g. olives, cilantro…"
           />
           <NextButton onClick={next} hasSelection={answers.include.length + answers.avoid.length > 0} />
-        </>
-      );
-    case 'servings':
-      return (
-        <>
-          <StepHeading title="How many people are eating?" subtitle="The AI chef scales its recipes to this" />
-          <div className="option-grid option-grid-sm">
-            {SERVINGS.map((n) => (
-              <OptionButton
-                key={n}
-                option={{ id: String(n), label: n === 8 ? '8+' : String(n), emoji: n === 1 ? '🧍' : n === 2 ? '👫' : n <= 4 ? '👨‍👩‍👧‍👦' : '🎉' }}
-                small
-                selected={answers.servings === n}
-                onClick={() => { update({ servings: n }); advance(); }}
-              />
-            ))}
-          </div>
         </>
       );
   }

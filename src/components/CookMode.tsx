@@ -165,7 +165,7 @@ function CookView({ recipe, initialStep }: { recipe: Recipe; initialStep: number
                   ))}
                 </div>
               )}
-              <StepTimerButtons text={step.text} minutes={recipe.source === 'ai' ? step.minutes : undefined} label={`Step ${index + 1}: ${step.title ?? recipe.title}`} />
+              <StepTimerButtons text={step.text} label={`Step ${index + 1}: ${step.title ?? recipe.title}`} />
             </div>
           </>
         )}

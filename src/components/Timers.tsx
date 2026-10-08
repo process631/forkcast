@@ -4,10 +4,8 @@ import { timersStore, useStore } from '../lib/store';
 import { cancelTimer, formatClock, markDone, startTimer } from '../lib/timers';
 
 /** Buttons for every duration found in a step ("⏱ 10 min"). */
-export function StepTimerButtons({ text, label, minutes }: { text: string; label: string; minutes?: number }) {
-  // AI steps carry their own minutes, which may not be written out in the text.
+export function StepTimerButtons({ text, label }: { text: string; label: string }) {
   const timers = stepTimers(text);
-  if (!timers.length && minutes) timers.push({ min: minutes, max: minutes, text: `${minutes} minutes`, passive: false });
   if (!timers.length) return null;
   return (
     <div className="timer-buttons">

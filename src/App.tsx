@@ -70,7 +70,7 @@ export function App() {
       </main>
       <footer className="site-footer no-print">
         <div className="container">
-          Made with 🍴 by Forkcast · Recipes from TheMealDB · AI by Google Gemini (optional)
+          Made with 🍴 by Forkcast · Recipes from TheMealDB
         </div>
       </footer>
       <TimerTray />

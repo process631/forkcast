@@ -33,13 +33,12 @@ export function EmojiArt({ emoji, title, className = '' }: { emoji?: string; tit
   );
 }
 
-export function RecipeMeta({ recipe, servings = true }: { recipe: Recipe; servings?: boolean }) {
+export function RecipeMeta({ recipe }: { recipe: Recipe }) {
   return (
     <div className="meta-row">
       <Chip>⏱️ {formatMinutes(recipe.totalMinutes)}{recipe.hasPassiveTime ? ' incl. resting' : ''}</Chip>
       <Chip>{recipe.difficulty === 'Easy' ? '🟢' : recipe.difficulty === 'Medium' ? '🟡' : '🔴'} {recipe.difficulty}</Chip>
       {recipe.cuisine && <Chip>🌍 {recipe.cuisine}</Chip>}
-      {servings && recipe.servings && <Chip>🍽️ Serves {recipe.servings}</Chip>}
       <Chip>📝 {recipe.ingredients.length} ingredients</Chip>
     </div>
   );

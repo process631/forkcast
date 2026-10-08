@@ -71,7 +71,6 @@ export function normalizeMeal(m: RawMeal): LibraryItem {
   const country = m.strCountry || '';
   const recipe: Recipe = {
     id: `mdb-${m.idMeal}`,
-    source: 'library',
     title: m.strMeal.trim(),
     image: m.strMealThumb || undefined,
     category: m.strCategory || undefined,

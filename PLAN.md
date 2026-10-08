@@ -1,5 +1,10 @@
 # Forkcast — "What should I cook?" app
 
+> **Status (October 2026):**
+> - **Live at** <https://process631.github.io/forkcast/>.
+> - **AI removed for now.** The Gemini AI features described below (AI recipes, AI pictures, Gemini app hand-off) were built and then taken out to keep the app simple. The app now runs only on the free TheMealDB library.
+> - **Getting AI back.** The full AI version is in git commit `f14113e`.
+
 ## Goal
 
 An app that helps you decide what to cook or which new recipe to try:

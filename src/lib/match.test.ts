@@ -41,7 +41,7 @@ const library = [
 
 const answers = (a: Partial<Answers>): Answers => ({ ...EMPTY_ANSWERS, ...a });
 const titles = (a: Answers, opts = {}) =>
-  matchLibrary(library, a, opts).suggestions.map((s) => (s.kind === 'library' ? s.recipe.title : s.idea.title));
+  matchLibrary(library, a, opts).suggestions.map((s) => s.recipe.title);
 
 describe('matchLibrary', () => {
   it('honors diets as hard filters', () => {
@@ -73,11 +73,11 @@ describe('matchLibrary', () => {
   it('puts "use up" ingredients and cuisines first, with reasons', () => {
     const res = matchLibrary(library, answers({ meal: 'dinner', category: 'surprise', include: ['spinach'] }));
     const top = res.suggestions[0];
-    expect(top.kind === 'library' && top.recipe.title).toBe('Spinach Lasagne');
+    expect(top.recipe.title).toBe('Spinach Lasagne');
     expect(top.reasons[0]).toBe('Uses spinach');
 
     const thai = matchLibrary(library, answers({ meal: 'dinner', category: 'surprise', cuisines: ['seasian'] })).suggestions[0];
-    expect(thai.kind === 'library' && thai.recipe.title).toBe('Thai Green Curry');
+    expect(thai.recipe.title).toBe('Thai Green Curry');
   });
 
   it('skips ids and look-alike titles already shown', () => {

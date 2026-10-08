@@ -1,4 +1,4 @@
-import { aiEnabled, appMode, cookbookStore, settingsStore, useStore } from '../lib/store';
+import { cookbookStore, useStore } from '../lib/store';
 import { useTheme, type Theme } from '../lib/theme';
 import { href } from '../router';
 
@@ -6,9 +6,7 @@ const THEME_ICON: Record<Theme, string> = { system: '🌓', light: '☀️', dar
 
 export function Header({ route }: { route: string }) {
   const [theme, cycleTheme] = useTheme();
-  const settings = useStore(settingsStore);
   const { saved } = useStore(cookbookStore);
-  const ai = aiEnabled(settings) || appMode(settings);
   return (
     <header className="site-header">
       <div className="container header-inner">
@@ -24,9 +22,8 @@ export function Header({ route }: { route: string }) {
             <span aria-hidden="true">📖</span> <span className="hide-sm">Cookbook</span>
             {saved.length > 0 && <span className="badge">{saved.length}</span>}
           </a>
-          <a href={href('/settings')} className={`nav-link${route === 'settings' ? ' active' : ''}`} title={ai ? 'AI chef is on' : 'Connect Gemini for AI ideas & photos'}>
+          <a href={href('/settings')} className={`nav-link${route === 'settings' ? ' active' : ''}`}>
             <span aria-hidden="true">⚙️</span> <span className="hide-sm">Settings</span>
-            <span className={`dot ${ai ? 'dot-on' : 'dot-off'}`} aria-label={ai ? 'AI on' : 'AI off'} />
           </a>
           <button type="button" className="icon-btn" onClick={cycleTheme} aria-label={`Theme: ${theme}. Click to change.`} title={`Theme: ${theme}`}>
             {THEME_ICON[theme]}

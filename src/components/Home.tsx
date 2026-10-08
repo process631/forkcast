@@ -2,14 +2,13 @@ import { useState } from 'react';
 import { MEALS } from '../data/taxonomy';
 import { loadLibrary } from '../lib/mealdb';
 import { randomPick } from '../lib/match';
-import { aiEnabled, appMode, cookbookStore, dietMemory, settingsStore, useStore } from '../lib/store';
+import { cookbookStore, dietMemory, useStore } from '../lib/store';
 import type { MealId } from '../lib/types';
 import { startWizard } from '../lib/wizard';
 import { href, navigate } from '../router';
 import { RecipeTile } from './RecipeCard';
 
 export function Home() {
-  const settings = useStore(settingsStore);
   const { recent, saved } = useStore(cookbookStore);
   const [surprising, setSurprising] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +34,7 @@ export function Home() {
       <section className="hero">
         <p className="eyebrow">Your kitchen sidekick</p>
         <h1>What should I cook today?</h1>
-        <p className="lead">Answer a few quick questions and get recipes picked for you, with step-by-step photos, timers and a hands-free cook mode.</p>
+        <p className="lead">Answer a few quick questions and get recipes picked for you, with photos, ingredient pictures for every step, timers and a hands-free cook mode.</p>
         <div className="hero-actions">
           <button type="button" className="btn btn-primary btn-lg" onClick={() => startWizard()}>
             Help me decide →
@@ -45,11 +44,7 @@ export function Home() {
           </button>
         </div>
         {error && <p className="form-error">{error}</p>}
-        {!aiEnabled(settings) && !appMode(settings) && (
-          <p className="hero-note">
-            Works free out of the box with 790+ real recipes. <a href={href('/settings')}>Turn on the Gemini AI chef</a> for recipes made for your exact answers.
-          </p>
-        )}
+        <p className="hero-note">Free, no sign-up: 790+ real recipes with photos, videos and step-by-step cook mode.</p>
       </section>
 
       <section className="section">

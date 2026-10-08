@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CUISINES, DIETS, MOODS, SKILLS, TIMES, getCategory, getMeal } from '../data/taxonomy';
-import { ideaFromRecipe, suggestIdeas } from '../lib/ai';
 import { loadLibrary } from '../lib/mealdb';
 import { matchLibrary } from '../lib/match';
-import { aiEnabled, answersFingerprint, answersStore, appMode, ideasStore, rememberAiRecipe, resultsStore, settingsStore, useStore } from '../lib/store';
-import type { Answers, Recipe, Suggestion } from '../lib/types';
+import { answersFingerprint, answersStore, resultsStore, useStore } from '../lib/store';
+import type { Answers } from '../lib/types';
 import { href, navigate } from '../router';
-import { RecipeHandoff } from './GeminiHandoff';
 import { SkeletonCard, SuggestionCard } from './RecipeCard';
 import { Chip, ErrorBox } from './ui';
+
+const COUNT = 6;
 
 function summarize(a: Answers): string[] {
   const out: string[] = [];
@@ -29,81 +29,41 @@ function summarize(a: Answers): string[] {
   return out;
 }
 
-function suggestionId(s: Suggestion) {
-  return s.kind === 'library' ? s.recipe.id : `ai-${s.idea.key}`;
-}
-
-function suggestionTitle(s: Suggestion) {
-  return s.kind === 'library' ? s.recipe.title : s.idea.title;
-}
-
 export function Results() {
   const answers = useStore(answersStore);
-  const settings = useStore(settingsStore);
   const results = useStore(resultsStore);
-  const aiOn = aiEnabled(settings) && settings.aiIdeas;
-  const app = appMode(settings);
-  const noAi = !aiOn && !app;
-  const fp = answersFingerprint(answers) + (aiOn ? ':ai' : '');
+  const fp = answersFingerprint(answers);
 
-  const [libLoading, setLibLoading] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [libError, setLibError] = useState('');
-  const [aiError, setAiError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [poolSize, setPoolSize] = useState<number | null>(null);
-  const [moreFromGemini, setMoreFromGemini] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const runRef = useRef(0);
 
   const search = useCallback(
     async (fresh: boolean) => {
-      abortRef.current?.abort();
-      const abort = new AbortController();
-      abortRef.current = abort;
+      const run = ++runRef.current;
       const prev = resultsStore.get();
       const shown = fresh ? [] : prev.shown;
-      const shownTitles = fresh ? [] : prev.suggestions.map(suggestionTitle);
+      const shownTitles = fresh ? [] : prev.suggestions.map((s) => s.recipe.title);
       const round = fresh ? 0 : prev.round + 1;
-      setLibError('');
-      setAiError('');
-      setLibLoading(true);
-      setAiLoading(aiOn);
-      // Recipes pasted in from the Gemini app stay when reshuffling the library.
-      const keep = !fresh && app ? prev.suggestions.filter((s) => s.kind === 'ai') : [];
-      resultsStore.set({ forAnswers: fp, suggestions: keep, shown, round });
-
-      // Free recipe library.
-      let library: Suggestion[] = [];
+      setError('');
+      setLoading(true);
+      resultsStore.set({ forAnswers: fp, suggestions: [], shown, round });
       try {
         const lib = await loadLibrary();
-        if (abort.signal.aborted) return;
-        let res = matchLibrary(lib, answers, { count: aiOn ? 3 : 6, exclude: shown, excludeTitles: shownTitles, seed: round });
+        if (run !== runRef.current) return;
+        let res = matchLibrary(lib, answers, { count: COUNT, exclude: shown, excludeTitles: shownTitles, seed: round });
         // Shown everything that fits? Start over with a fresh shuffle.
-        if (!res.suggestions.length && shown.length) res = matchLibrary(lib, answers, { count: aiOn ? 3 : 6, seed: round });
-        library = res.suggestions;
+        if (!res.suggestions.length && shown.length) res = matchLibrary(lib, answers, { count: COUNT, seed: round });
         setPoolSize(res.poolSize);
-        resultsStore.set((p) => ({ ...p, suggestions: [...p.suggestions.filter((s) => s.kind === 'ai'), ...library], shown: [...p.shown, ...library.map(suggestionId)] }));
+        resultsStore.set({ forAnswers: fp, suggestions: res.suggestions, shown: [...shown, ...res.suggestions.map((s) => s.recipe.id)], round });
       } catch (e) {
-        if (!abort.signal.aborted) setLibError((e as Error).message);
+        if (run === runRef.current) setError((e as Error).message);
       } finally {
-        if (!abort.signal.aborted) setLibLoading(false);
-      }
-
-      // AI chef ideas.
-      if (aiOn) {
-        try {
-          const ideas = await suggestIdeas(answers, shownTitles, abort.signal);
-          if (abort.signal.aborted) return;
-          ideasStore.set((p) => ({ ...p, ...Object.fromEntries(ideas.map((idea) => [idea.key, { idea, answers }])) }));
-          const ai: Suggestion[] = ideas.map((idea) => ({ kind: 'ai', idea, reasons: idea.reasons }));
-          resultsStore.set((p) => ({ ...p, suggestions: [...ai, ...p.suggestions.filter((s) => s.kind === 'library')], shown: [...p.shown, ...ai.map(suggestionId)] }));
-        } catch (e) {
-          if (!abort.signal.aborted && (e as Error).name !== 'AbortError') setAiError((e as Error).message);
-        } finally {
-          if (!abort.signal.aborted) setAiLoading(false);
-        }
+        if (run === runRef.current) setLoading(false);
       }
     },
-    [answers, aiOn, app, fp],
+    [answers, fp],
   );
 
   useEffect(() => {
@@ -114,24 +74,9 @@ export function Results() {
     if (results.forAnswers !== fp) void search(true);
   }, [fp]); // only re-run when the answers change, not on every results update
 
-  useEffect(() => () => abortRef.current?.abort(), []);
-
-  const addFromGemini = (list: { recipe: Recipe; reasons: string[] }[]) => {
-    list.forEach(({ recipe }) => rememberAiRecipe(recipe));
-    const added: Suggestion[] = list.map(({ recipe, reasons }) => ({ kind: 'ai', idea: ideaFromRecipe(recipe, reasons), reasons }));
-    const ids = new Set(added.map(suggestionId));
-    resultsStore.set((p) => ({
-      ...p,
-      suggestions: [...added, ...p.suggestions.filter((s) => !ids.has(suggestionId(s)))],
-      shown: [...p.shown, ...ids],
-    }));
-    setMoreFromGemini(false);
-  };
-
-  const ai = results.suggestions.filter((s) => s.kind === 'ai');
-  const library = results.suggestions.filter((s) => s.kind === 'library');
-  const nothing = !libLoading && !aiLoading && !results.suggestions.length;
-  const allClose = library.length > 0 && library.every((s) => s.kind === 'library' && s.close);
+  const { suggestions } = results;
+  const nothing = !loading && !error && !suggestions.length;
+  const allClose = suggestions.length > 0 && suggestions.every((s) => s.close);
 
   return (
     <div className="container page">
@@ -150,69 +95,28 @@ export function Results() {
         </div>
       </div>
 
-      {app && (
-        <section className="section">
-          <div className="section-head">
-            <h2 className="section-title">✨ Recipes made for you by Gemini</h2>
-            {ai.length > 0 && !moreFromGemini && (
-              <button type="button" className="btn btn-soft btn-sm" onClick={() => setMoreFromGemini(true)}>
-                Ask Gemini for 3 more
-              </button>
-            )}
-          </div>
-          {ai.length > 0 && (
-            <div className="card-grid">
-              {ai.map((s, i) => (
-                <SuggestionCard key={suggestionId(s)} suggestion={s} index={i} />
-              ))}
-            </div>
-          )}
-          {(moreFromGemini || !ai.length) && <RecipeHandoff answers={answers} avoidTitles={results.suggestions.map(suggestionTitle)} onRecipes={addFromGemini} />}
-        </section>
-      )}
-
-      {aiOn && (
-        <section className="section">
-          <div className="section-head">
-            <h2 className="section-title">✨ AI chef ideas, made for you</h2>
-          </div>
-          {aiError && (
-            <ErrorBox title="The AI chef couldn’t answer this time." action={<a href={href('/settings')} className="link">Check AI settings</a>}>
-              {aiError}
-            </ErrorBox>
-          )}
-          <div className="card-grid">
-            {aiLoading && !ai.length ? [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />) : ai.map((s, i) => <SuggestionCard key={suggestionId(s)} suggestion={s} index={i} />)}
-          </div>
-        </section>
-      )}
-
       <section className="section">
         <div className="section-head">
-          <h2 className="section-title">{noAi ? '📚 Recipes that match' : '📚 Real recipes from the library'}</h2>
-          {!libLoading && library.length > 0 && <span className="muted small">With photos{library.some((s) => s.kind === 'library' && s.recipe.youtube) ? ' & videos' : ''}</span>}
+          <h2 className="section-title">📚 Recipes that match</h2>
+          {!loading && suggestions.length > 0 && <span className="muted small">With photos{suggestions.some((s) => s.recipe.youtube) ? ' & videos' : ''}</span>}
         </div>
-        {libError && (
+        {error && (
           <ErrorBox title="Couldn’t load the recipe library." action={<button type="button" className="btn btn-sm" onClick={() => search(true)}>Try again</button>}>
-            {libError}
+            {error}
           </ErrorBox>
         )}
-        {allClose && !libLoading && (
-          <p className="notice">Nothing in the free library matches every answer exactly, so these are the closest picks.{noAi && <> <a href={href('/settings')}>Connect Gemini</a> and the AI chef will invent recipes that fit perfectly.</>}</p>
-        )}
+        {allClose && !loading && <p className="notice">Nothing in the library matches every answer exactly, so these are the closest picks.</p>}
         <div className="card-grid">
-          {libLoading && !library.length
+          {loading && !suggestions.length
             ? [0, 1, 2].map((i) => <SkeletonCard key={i} />)
-            : library.map((s, i) => <SuggestionCard key={suggestionId(s)} suggestion={s} index={i} />)}
+            : suggestions.map((s, i) => <SuggestionCard key={s.recipe.id} suggestion={s} index={i} />)}
         </div>
-        {!libLoading && noAi && poolSize !== null && poolSize > 0 && poolSize <= 6 && !allClose && (
-          <p className="notice">
-            That’s every library recipe that fits ({poolSize}). <a href={href('/settings')}>Connect Gemini</a> for unlimited AI-tailored ideas.
-          </p>
+        {!loading && poolSize !== null && poolSize > 0 && poolSize <= COUNT && !allClose && (
+          <p className="notice">That’s every library recipe that fits ({poolSize}). Try changing an answer for more ideas.</p>
         )}
       </section>
 
-      {nothing && !libError && (
+      {nothing && (
         <div className="empty">
           <div className="empty-emoji">🤔</div>
           <h2>No recipes match all of that</h2>
@@ -224,7 +128,7 @@ export function Results() {
       )}
 
       <div className="results-actions">
-        <button type="button" className="btn btn-primary btn-lg" onClick={() => search(false)} disabled={libLoading || aiLoading}>
+        <button type="button" className="btn btn-primary btn-lg" onClick={() => search(false)} disabled={loading}>
           🔀 Show me different options
         </button>
         <a href={href('/plan')} className="btn btn-ghost btn-lg">
