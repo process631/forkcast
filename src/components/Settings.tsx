@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { resetLibrary } from '../lib/library';
 import { idbClear } from '../lib/storage';
 import { cookbookStore } from '../lib/store';
 
@@ -24,6 +25,7 @@ export function Settings() {
             className="btn btn-soft btn-sm"
             onClick={async () => {
               await idbClear('library:');
+              resetLibrary();
               flash('Recipe library will re-download next time.');
             }}
           >

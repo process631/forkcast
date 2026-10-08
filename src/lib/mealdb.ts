@@ -1,6 +1,7 @@
 import { cuisineForCountry } from '../data/taxonomy';
 import { estimateDifficulty, estimateMinutes, ingredientImage, splitInstructions, youtubeId } from './parse';
-import { idbGet, idbSet } from './storage';
+import type { Source } from './library';
+import { fetchByLetter, fetchJson } from './net';
 import type { Ingredient, Recipe } from './types';
 
 /**
@@ -8,8 +9,7 @@ import type { Ingredient, Recipe } from './types';
  * The free developer key "1" is fine for personal and educational projects.
  */
 const API = 'https://www.themealdb.com/api/json/v1/1';
-const CACHE_KEY = 'library:v1';
-const CACHE_DAYS = 7;
+const NAME = 'TheMealDB';
 
 export interface RawMeal {
   idMeal: string;
@@ -100,54 +100,15 @@ export function normalizeMeal(m: RawMeal): LibraryItem {
   };
 }
 
-async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`TheMealDB returned ${res.status}`);
-  return (await res.json()) as T;
-}
+type MealsResponse = { meals: RawMeal[] | null };
 
-let libraryPromise: Promise<LibraryItem[]> | null = null;
-
-/**
- * Load the whole TheMealDB catalog (one request per first letter), cached for a week.
- * Calls share one in-flight promise, so warming it up early is cheap.
- */
-export function loadLibrary(): Promise<LibraryItem[]> {
-  if (!libraryPromise) {
-    libraryPromise = loadLibraryUncached().catch((err) => {
-      libraryPromise = null;
-      throw err;
-    });
-  }
-  return libraryPromise;
-}
-
-async function loadLibraryUncached(): Promise<LibraryItem[]> {
-  const cached = await idbGet<{ at: number; meals: RawMeal[] }>(CACHE_KEY);
-  const fresh = cached && Date.now() - cached.at < CACHE_DAYS * 86400_000;
-  if (cached && fresh) return cached.meals.map(normalizeMeal);
-
-  const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
-  const results = await Promise.allSettled(
-    letters.map((l) => fetchJson<{ meals: RawMeal[] | null }>(`${API}/search.php?f=${l}`)),
-  );
-  const meals = results.flatMap((r) => (r.status === 'fulfilled' && r.value.meals ? r.value.meals : []));
-  const failures = results.filter((r) => r.status === 'rejected').length;
-
-  if (meals.length === 0 || failures > 5) {
-    if (cached) return cached.meals.map(normalizeMeal); // stale is better than nothing
-    if (meals.length === 0) throw new Error('Could not reach the recipe library. Check your internet connection and try again.');
-  }
-  if (failures === 0) await idbSet(CACHE_KEY, { at: Date.now(), meals });
-  return meals.map(normalizeMeal);
-}
-
-/** Look up one library recipe by its app id ("mdb-52772"). */
-export async function getLibraryRecipe(id: string): Promise<Recipe | undefined> {
-  const library = await loadLibrary().catch(() => [] as LibraryItem[]);
-  const hit = library.find((item) => item.recipe.id === id);
-  if (hit) return hit.recipe;
-  // Not in the cached catalog (e.g. a brand-new recipe) — ask the API directly.
-  const raw = await fetchJson<{ meals: RawMeal[] | null }>(`${API}/lookup.php?i=${encodeURIComponent(id.replace(/^mdb-/, ''))}`);
-  return raw.meals?.[0] ? normalizeMeal(raw.meals[0]).recipe : undefined;
-}
+export const mealdbSource: Source<RawMeal> = {
+  name: NAME,
+  prefix: 'mdb-',
+  cacheKey: 'library:mealdb:v2',
+  // A few missing letters still leave a useful catalog.
+  maxFailures: 5,
+  fetchAll: () => fetchByLetter(async (l) => (await fetchJson<MealsResponse>(`${API}/search.php?f=${l}`, NAME)).meals),
+  normalize: normalizeMeal,
+  lookup: async (id) => (await fetchJson<MealsResponse>(`${API}/lookup.php?i=${encodeURIComponent(id)}`, NAME)).meals?.[0],
+};

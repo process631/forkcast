@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CUISINES, DIETS, MOODS, SKILLS, TIMES, getCategory, getMeal } from '../data/taxonomy';
-import { loadLibrary } from '../lib/mealdb';
+import { describeStatus, loadLibrary, resetLibrary } from '../lib/library';
 import { matchLibrary } from '../lib/match';
 import { answersFingerprint, answersStore, resultsStore, useStore } from '../lib/store';
 import type { Answers } from '../lib/types';
@@ -36,6 +36,7 @@ export function Results() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [libraryNote, setLibraryNote] = useState('');
   const [poolSize, setPoolSize] = useState<number | null>(null);
   const runRef = useRef(0);
 
@@ -52,6 +53,7 @@ export function Results() {
       try {
         const lib = await loadLibrary();
         if (run !== runRef.current) return;
+        setLibraryNote(describeStatus());
         let res = matchLibrary(lib, answers, { count: COUNT, exclude: shown, excludeTitles: shownTitles, seed: round });
         // Shown everything that fits? Start over with a fresh shuffle.
         if (!res.suggestions.length && shown.length) res = matchLibrary(lib, answers, { count: COUNT, seed: round });
@@ -104,6 +106,14 @@ export function Results() {
           <ErrorBox title="Couldn’t load the recipe library." action={<button type="button" className="btn btn-sm" onClick={() => search(true)}>Try again</button>}>
             {error}
           </ErrorBox>
+        )}
+        {libraryNote && !loading && (
+          <p className="notice">
+            {libraryNote}{' '}
+            <button type="button" className="link-btn" onClick={() => { resetLibrary(); void search(true); }}>
+              Try again
+            </button>
+          </p>
         )}
         {allClose && !loading && <p className="notice">Nothing in the library matches every answer exactly, so these are the closest picks.</p>}
         <div className="card-grid">

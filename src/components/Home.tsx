@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MEALS } from '../data/taxonomy';
-import { loadLibrary } from '../lib/mealdb';
+import { loadLibrary } from '../lib/library';
 import { randomPick } from '../lib/match';
 import { cookbookStore, dietMemory, useStore } from '../lib/store';
 import type { MealId } from '../lib/types';
@@ -43,8 +43,15 @@ export function Home() {
             {surprising ? 'Rolling the dice…' : '🎲 Surprise me'}
           </button>
         </div>
-        {error && <p className="form-error">{error}</p>}
-        <p className="hero-note">Free, no sign-up: 790+ real recipes with photos, videos and step-by-step cook mode.</p>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}{' '}
+            <button type="button" className="link-btn" onClick={surprise}>
+              Try again
+            </button>
+          </p>
+        )}
+        <p className="hero-note">Free, no sign-up: 800+ real recipes with photos, videos and step-by-step cook mode.</p>
       </section>
 
       <section className="section">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLibraryRecipe } from './mealdb';
+import { getLibraryRecipe } from './library';
 import { addRecent, cookbookStore } from './store';
 import type { Recipe } from './types';
 
