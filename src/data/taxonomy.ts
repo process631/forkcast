@@ -78,14 +78,14 @@ export const MEALS: MealDef[] = [
     label: 'Lunch',
     emoji: '🥪',
     hint: 'Sandwiches, salads, soups, bowls',
-    categories: ['sandwiches', 'salads', 'soups', 'pasta', 'rice', 'chicken', 'seafood', 'vegetarian', 'light', 'savory', 'surprise'],
+    categories: ['sandwiches', 'salads', 'soups', 'pasta', 'rice', 'stirfry', 'pizza', 'latin', 'chicken', 'seafood', 'vegetarian', 'light', 'savory', 'surprise'],
   },
   {
     id: 'dinner',
     label: 'Dinner',
     emoji: '🍽️',
     hint: 'Mains for tonight',
-    categories: ['pasta', 'chicken', 'meat', 'seafood', 'curry', 'comfort', 'rice', 'vegetarian', 'vegan', 'soups', 'savory', 'surprise'],
+    categories: ['pasta', 'chicken', 'meat', 'seafood', 'curry', 'stirfry', 'bbq', 'pizza', 'latin', 'comfort', 'rice', 'dumplings', 'vegetarian', 'vegan', 'soups', 'savory', 'surprise'],
   },
   {
     id: 'side',
@@ -99,7 +99,7 @@ export const MEALS: MealDef[] = [
     label: 'Snack & Appetizer',
     emoji: '🧆',
     hint: 'Bites, dips & party food',
-    categories: ['bites', 'sweet', 'baking', 'sandwiches', 'chicken', 'seafood', 'vegetarian', 'surprise'],
+    categories: ['bites', 'dumplings', 'latin', 'sweet', 'baking', 'sandwiches', 'chicken', 'seafood', 'vegetarian', 'surprise'],
   },
   {
     id: 'dessert',
@@ -634,6 +634,117 @@ export const CATEGORIES: CategoryDef[] = [
     },
   },
   {
+    id: 'stirfry',
+    label: 'Stir-fries & Wok',
+    emoji: '🥢',
+    hint: 'Fast, hot & saucy',
+    rule: {
+      titleRe: /\b(stir[- ]?fr(y|ies|ied)|wok|chow mein|lo mein|pad (thai|see ew|kra pao)|kung pao|teriyaki|sweet and sour|general tso|fried rice|szechuan|sichuan)\b/,
+      tags: ['Stir-fry', 'StirFry'],
+      sweet: false,
+    },
+    question: {
+      id: 'style',
+      title: 'What goes in the wok?',
+      multi: true,
+      options: [
+        { id: 'chicken', label: 'Chicken', emoji: '🐔', re: /\bchicken\b/ },
+        { id: 'beef', label: 'Beef or pork', emoji: '🥩', re: /\b(beef|steak|pork)\b/ },
+        { id: 'seafood', label: 'Shrimp & fish', emoji: '🦐', re: /\b(prawns?|shrimps?|salmon|fish|squid)\b/ },
+        { id: 'veg', label: 'Tofu & veggies', emoji: '🥦', re: /\b(tofu|vegetables?|broccoli|eggplant|aubergine|beans|greens|bok choy)\b/ },
+        { id: 'noodles', label: 'With noodles or rice', emoji: '🍜', re: /\b(noodles?|rice)\b/ },
+      ],
+    },
+  },
+  {
+    id: 'bbq',
+    label: 'BBQ, Grills & Kebabs',
+    emoji: '♨️',
+    hint: 'Smoky, charred, on a stick',
+    rule: {
+      titleRe: /\b(bbq|barbecue|grill|grilled|griddled|kebabs?|skewers?|satay|souvlaki|jerk|ribs|shashlik|yakitori|churrasco|asado|suya|braai|kofta|shish|tandoori)\b/,
+      tags: ['BBQ', 'Barbecue', 'Grilling'],
+      excludeTitleRe: /\b(sandwich|toastie|grilled cheese|mac and cheese)\b/,
+      sweet: false,
+    },
+    question: {
+      id: 'style',
+      title: 'What’s on the grill?',
+      multi: true,
+      options: [
+        { id: 'chicken', label: 'Chicken', emoji: '🍗', re: /\bchicken\b/ },
+        { id: 'redmeat', label: 'Beef & lamb', emoji: '🥩', re: /\b(beef|steak|lamb|mutton|brisket)\b/ },
+        { id: 'pork', label: 'Pork & ribs', emoji: '🐖', re: /\b(pork|ribs|sausages?)\b/ },
+        { id: 'seafood', label: 'Fish & prawns', emoji: '🐟', re: /\b(fish|prawns?|shrimps?|sardines?|salmon|squid)\b/ },
+        { id: 'veg', label: 'Veggies & halloumi', emoji: '🌽', re: /\b(halloumi|aubergine|eggplant|corn|peppers?|courgette|zucchini|mushrooms?|tofu)\b/, notRe: /\b(chicken|beef|lamb|pork|fish|prawns?)\b/ },
+      ],
+    },
+  },
+  {
+    id: 'pizza',
+    label: 'Pizza & Flatbreads',
+    emoji: '🍕',
+    hint: 'Pizza, lahmacun, flatbreads',
+    rule: {
+      titleRe: /\b(pizzas?|flatbreads?|calzones?|focaccia|lahmacun|pide|manakish|piadina|pissaladi[eè]re|tarte flamb[eé]e)\b/,
+      sweet: false,
+    },
+    question: {
+      id: 'style',
+      title: 'What kind?',
+      multi: true,
+      options: [
+        { id: 'classic', label: 'Classic pizza', emoji: '🍕', titleRe: /\bpizzas?\b/ },
+        { id: 'flatbread', label: 'Flatbreads', emoji: '🫓', titleRe: /\b(flatbreads?|lahmacun|pide|manakish|piadina|focaccia)\b/ },
+        { id: 'veggie', label: 'Veggie toppings', emoji: '🍅', re: /\b(mozzarella|basil|aubergine|tomato|mushrooms?|peppers?)\b/, notRe: /\b(beef|lamb|chicken|pork|ham|pepperoni|sausages?)\b/ },
+        { id: 'meaty', label: 'Meaty', emoji: '🥩', re: /\b(beef|lamb|chicken|pork|ham|pepperoni|sausages?|mince)\b/ },
+      ],
+    },
+  },
+  {
+    id: 'latin',
+    label: 'Tacos, Empanadas & Arepas',
+    emoji: '🌮',
+    hint: 'Latin street food',
+    rule: {
+      titleRe: /\b(tacos?|burritos?|enchiladas?|quesadillas?|fajitas?|nachos|tostadas?|chimichangas?|tamales?|elote|arepas?|pupusas?|empanadas?|salte[nñ]as?)\b/,
+      excludeTitleRe: /\bchocolate\b/,
+      sweet: false,
+    },
+    question: {
+      id: 'style',
+      title: 'Which one?',
+      multi: true,
+      options: [
+        { id: 'tacos', label: 'Tacos & burritos', emoji: '🌮', titleRe: /\b(tacos?|burritos?|fajitas?|nachos|tostadas?|quesadillas?)\b/ },
+        { id: 'baked', label: 'Enchiladas & bakes', emoji: '🔥', titleRe: /\b(enchiladas?|casserole|baked)\b/ },
+        { id: 'empanadas', label: 'Empanadas', emoji: '🥟', titleRe: /\bempanadas?\b/ },
+        { id: 'arepas', label: 'Arepas & corn', emoji: '🌽', titleRe: /\b(arepas?|elote|pupusas?|tamales?|corn)\b/ },
+      ],
+    },
+  },
+  {
+    id: 'dumplings',
+    label: 'Dumplings & Rolls',
+    emoji: '🥟',
+    hint: 'Gyoza, pierogi, spring rolls',
+    rule: {
+      titleRe: /\b(dumplings?|gyoza|wontons?|pierogi|pierogies|momos?|bao|pork buns|mant[iu]|pelmeni|varenyky|dim sum|potstickers?|khinkali|kn[oö]del|spring rolls?|egg rolls?|samosas?|raspeballer)\b/,
+      sweet: false,
+    },
+    question: {
+      id: 'style',
+      title: 'Steamed, boiled or fried?',
+      multi: false,
+      options: [
+        { id: 'fried', label: 'Crispy & fried', emoji: '🍤', re: /\b(fry|fried|crisp|air fryer|deep)\b/ },
+        { id: 'soft', label: 'Steamed or boiled', emoji: '♨️', re: /\b(steam|steamed|boil|boiled|simmer|poach)/, notRe: /\b(deep[- ]?fry|deep[- ]fried)\b/ },
+        { id: 'fresh', label: 'Fresh rolls', emoji: '🥬', titleRe: /\b(fresh|rice paper)\b/ },
+        { id: 'either', label: 'Either is fine', emoji: '🤷' },
+      ],
+    },
+  },
+  {
     id: 'cakes',
     label: 'Cakes & Cupcakes',
     emoji: '🎂',
@@ -718,6 +829,8 @@ export const MOODS: MatchOption[] = [
   { id: 'garlicky', label: 'Garlicky', emoji: '🧄', re: /\bgarlic\b/ },
   { id: 'crispy', label: 'Crispy & crunchy', emoji: '🥨', re: /\b(crisp|crispy|fry|fried|crunch|crunchy|breadcrumbs|panko|batter|golden)\b/ },
   { id: 'hearty', label: 'Hearty & filling', emoji: '🍖', re: /\b(potato|stew|beef|lamb|beans|lentils|casserole|pie|dumplings?|sausages?)\b/ },
+  { id: 'tangy', label: 'Tangy & pickled', emoji: '🥒', re: /\b(vinegar|pickled?|pickles|tamarind|sumac|sauerkraut|kimchi|capers|sour cream|yogh?urt|lemon juice|lime juice)\b/ },
+  { id: 'umami', label: 'Savory umami', emoji: '🍄', re: /\b(soy sauce|miso|mushrooms?|parmesan|parmigiano|anchov(y|ies)|fish sauce|worcestershire|oyster sauce|dashi|seaweed|nori|tomato pur[eé]e|tomato paste)\b/ },
   { id: 'sweetsavory', label: 'Sweet & savory', emoji: '🍯', re: /\b(honey|maple|brown sugar|teriyaki|hoisin|sweet chil|glaze|caramel|pineapple|chutney)/ },
 ];
 
@@ -747,13 +860,15 @@ export const CUISINES: CuisineDef[] = [
   { id: 'british', label: 'British, Irish & Aussie', emoji: '🫖', countries: ['United Kingdom', 'Ireland', 'Australia', 'New Zealand'] },
   { id: 'french', label: 'French', emoji: '🥖', countries: ['France', 'Belgium'] },
   { id: 'spanish', label: 'Spanish & Portuguese', emoji: '🥘', countries: ['Spain', 'Portugal', 'Andorra'] },
-  { id: 'mediterranean', label: 'Greek, Turkish & Middle Eastern', emoji: '🫒', countries: ['Greece', 'Turkey', 'Syria', 'Saudi Arabia', 'Lebanon', 'Cyprus', 'Israel', 'Jordan', 'Armenia', 'Azerbaijan', 'Iran', 'Iraq', 'Yemen', 'Bahrain', 'Kuwait', 'Oman', 'Qatar', 'United Arab Emirates', 'Palestine'] },
+  { id: 'mediterranean', label: 'Greek & Turkish', emoji: '🫒', countries: ['Greece', 'Turkey', 'Cyprus'] },
+  { id: 'middleeastern', label: 'Middle Eastern & Caucasus', emoji: '🧆', countries: ['Syria', 'Saudi Arabia', 'Lebanon', 'Israel', 'Jordan', 'Armenia', 'Azerbaijan', 'Georgia', 'Iran', 'Iraq', 'Yemen', 'Bahrain', 'Kuwait', 'Oman', 'Qatar', 'United Arab Emirates', 'Palestine'] },
   { id: 'african', label: 'African', emoji: '🌍', countries: ['Morocco', 'Algeria', 'Tunisia', 'Egypt', 'Kenya', 'Botswana', 'Angola', 'Nigeria', 'Ghana', 'Ethiopia', 'South Africa', 'Senegal', 'Cameroon', 'Tanzania', 'Uganda', 'Benin', 'Burkina Faso', 'Burundi', 'Cape Verde', 'Central African Republic', 'Chad'] },
   { id: 'indian', label: 'Indian & South Asian', emoji: '🍛', countries: ['India', 'Bangladesh', 'Pakistan', 'Sri Lanka', 'Nepal', 'Afghanistan', 'Bhutan'] },
   { id: 'chinese', label: 'Chinese', emoji: '🥡', countries: ['China', 'Taiwan', 'Hong Kong'] },
   { id: 'japanese', label: 'Japanese & Korean', emoji: '🍣', countries: ['Japan', 'South Korea', 'Korea'] },
   { id: 'seasian', label: 'Southeast Asian', emoji: '🍜', countries: ['Thailand', 'Vietnam', 'Malaysia', 'Philippines', 'Cambodia', 'Laos', 'Indonesia', 'Singapore', 'Myanmar', 'Brunei'] },
-  { id: 'european', label: 'Central, Eastern & Nordic European', emoji: '🥟', countries: ['Poland', 'Russia', 'Ukraine', 'Slovakia', 'Croatia', 'Bulgaria', 'Albania', 'Austria', 'Netherlands', 'Norway', 'Denmark', 'Estonia', 'Germany', 'Hungary', 'Czech Republic', 'Sweden', 'Finland', 'Romania', 'Serbia', 'Belarus', 'Bosnia and Herzegovina', 'Switzerland', 'Iceland', 'Lithuania', 'Latvia', 'Slovenia', 'Georgia'] },
+  { id: 'european', label: 'Central & Eastern European', emoji: '🥟', countries: ['Poland', 'Russia', 'Ukraine', 'Slovakia', 'Croatia', 'Bulgaria', 'Albania', 'Austria', 'Germany', 'Hungary', 'Czech Republic', 'Romania', 'Serbia', 'Belarus', 'Bosnia and Herzegovina', 'Switzerland', 'Lithuania', 'Latvia', 'Slovenia'] },
+  { id: 'nordic', label: 'Nordic & Dutch', emoji: '🧇', countries: ['Netherlands', 'Norway', 'Denmark', 'Estonia', 'Sweden', 'Finland', 'Iceland'] },
 ];
 
 export const DIETS: Option[] = [

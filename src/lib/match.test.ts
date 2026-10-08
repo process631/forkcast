@@ -100,3 +100,24 @@ describe('mealFit & categoryStrength', () => {
     expect(categoryStrength(curry, getCategory('curry')!)).toBeGreaterThan(0);
   });
 });
+
+describe('expanded taxonomy', () => {
+  const cat = (id: string) => getCategory(id)!;
+  it('finds the new kinds of food', () => {
+    expect(categoryStrength(meal('Beef and Broccoli Stir-Fry', 'Beef', ['Beef', 'Broccoli'], 'Stir-fry in a wok.'), cat('stirfry'))).toBe(2);
+    expect(categoryStrength(meal('Smoky chicken skewers', 'Chicken', ['Chicken'], 'Grill for 10 minutes.'), cat('bbq'))).toBe(2);
+    expect(categoryStrength(meal('Grilled Mac and Cheese Sandwich', 'Miscellaneous', ['Bread'], 'Grill.'), cat('bbq'))).toBe(0);
+    expect(categoryStrength(meal('Turkish lahmacun', 'Lamb', ['Lamb', 'Flour'], 'Bake.'), cat('pizza'))).toBe(2);
+    expect(categoryStrength(meal('Beef Empanadas', 'Beef', ['Beef', 'Flour'], 'Bake.'), cat('latin'))).toBe(2);
+    expect(categoryStrength(meal('Chocolate empanadas', 'Dessert', ['Chocolate'], 'Bake.'), cat('latin'))).toBe(0);
+    expect(categoryStrength(meal('Pierogi (Polish Dumplings)', 'Vegetarian', ['Potatoes', 'Flour'], 'Boil.'), cat('dumplings'))).toBe(2);
+    expect(categoryStrength(meal('Chelsea Buns', 'Dessert', ['Flour', 'Sugar'], 'Bake.'), cat('dumplings'))).toBe(0);
+  });
+
+  it('maps the split cuisines', () => {
+    expect(meal('Kibbeh', 'Lamb', ['Lamb'], 'Fry.', { strCountry: 'Lebanon' }).recipe.cuisineGroup).toBe('middleeastern');
+    expect(meal('Imam bayildi', 'Vegetarian', ['Aubergine'], 'Bake.', { strCountry: 'Turkey' }).recipe.cuisineGroup).toBe('mediterranean');
+    expect(meal('Stamppot', 'Pork', ['Potatoes'], 'Boil.', { strCountry: 'Netherlands' }).recipe.cuisineGroup).toBe('nordic');
+    expect(meal('Pierogi', 'Vegetarian', ['Potatoes'], 'Boil.', { strCountry: 'Poland' }).recipe.cuisineGroup).toBe('european');
+  });
+});
