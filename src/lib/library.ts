@@ -1,4 +1,5 @@
 import type { LibraryItem } from './item';
+import { cocktaildbSource } from './cocktaildb';
 import { dummyjsonSource } from './dummyjson';
 import { mealdbSource } from './mealdb';
 import { NetworkError, isOffline } from './net';
@@ -90,7 +91,7 @@ async function loadSource<Raw>(src: Source<Raw>): Promise<SourceResult> {
 }
 
 /** Every recipe source, in the order their recipes are listed. */
-const SOURCES = [mealdbSource, dummyjsonSource] as Source<unknown>[];
+const SOURCES = [mealdbSource, dummyjsonSource, cocktaildbSource] as Source<unknown>[];
 
 let libraryPromise: Promise<LibraryItem[]> | null = null;
 

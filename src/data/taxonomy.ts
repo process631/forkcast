@@ -39,7 +39,7 @@ export interface CategoryRule {
   /** The recipe must also be (or must not be) a sweet dish. */
   sweet?: boolean;
   /** Extra built-in rule handled by the matching engine. */
-  special?: 'vegetarian' | 'vegan' | 'light' | 'comfort' | 'spicy' | 'any';
+  special?: 'vegetarian' | 'vegan' | 'light' | 'comfort' | 'spicy' | 'any' | 'alcoholic' | 'alcohol-free';
   /** Titles that should never match even if other signals do. */
   excludeTitleRe?: RegExp;
 }
@@ -107,6 +107,103 @@ export const MEALS: MealDef[] = [
     emoji: '🍰',
     hint: 'Cakes, cookies, puddings & more',
     categories: ['cakes', 'cookies', 'chocolate', 'fruity', 'pies', 'puddings', 'pancakes', 'vegan', 'surprise'],
+  },
+  {
+    id: 'drink',
+    label: 'Drinks',
+    emoji: '🍹',
+    hint: 'Mocktails, shakes, coffee & cocktails',
+    categories: ['mocktails', 'shakes', 'coffee-tea', 'cocktails', 'party', 'surprise'],
+  },
+];
+
+/** Categories that only make sense for the Drinks meal. */
+export const DRINK_CATEGORIES = new Set(['mocktails', 'shakes', 'coffee-tea', 'cocktails', 'party']);
+
+const DRINK_FLAVOR_QUESTION: Question = {
+  id: 'flavor',
+  title: 'What flavor are you after?',
+  multi: true,
+  options: [
+    { id: 'fruity', label: 'Fruity', emoji: '🍓', re: /\b(fruit|berr|strawberr|raspberr|mango|pineapple|peach|banana|cherr|apple|cranberr|passion|watermelon|kiwi|papaya|grenadine|orange juice)/ },
+    { id: 'citrus', label: 'Zesty & sour', emoji: '🍋', re: /\b(lemon|lime|grapefruit|sour|citrus|orange)\b/ },
+    { id: 'fizzy', label: 'Fizzy', emoji: '🫧', re: /\b(soda|tonic|sprite|7-up|ginger ale|ginger beer|cola|coke|lemonade|champagne|prosecco|sparkling|carbonated)\b/ },
+    { id: 'creamy', label: 'Creamy', emoji: '🥛', re: /\b(cream|milk|yogh?urt|ice cream|coconut|eggs?|baileys|condensed)\b/ },
+    { id: 'minty', label: 'Minty & herbal', emoji: '🌿', re: /\b(mint|basil|rosemary|thyme|cucumber|elderflower|ginger)\b/ },
+  ],
+};
+
+const DRINK_CATEGORY_DEFS: CategoryDef[] = [
+  {
+    id: 'mocktails',
+    label: 'Mocktails & Coolers',
+    emoji: '🍹',
+    hint: 'No alcohol, all the fun',
+    rule: { cats: ['Cocktail', 'Ordinary Drink', 'Soft Drink', 'Punch / Party Drink', 'Other / Unknown'], special: 'alcohol-free' },
+    question: DRINK_FLAVOR_QUESTION,
+  },
+  {
+    id: 'shakes',
+    label: 'Shakes & Smoothies',
+    emoji: '🥤',
+    hint: 'Milkshakes, smoothies, lassi',
+    rule: { cats: ['Shake'], titleRe: /\b(shake|smoothie|lassi|frapp[eé])\b/, special: 'alcohol-free' },
+    question: {
+      id: 'style',
+      title: 'Which way?',
+      multi: true,
+      options: [
+        { id: 'fruit', label: 'Fruity smoothie', emoji: '🍌', re: /\b(banana|berr|strawberr|mango|kiwi|papaya|pineapple|fruit|peach)/ },
+        { id: 'choc', label: 'Chocolatey', emoji: '🍫', re: /\b(chocolate|cocoa|nutella)/ },
+        { id: 'yogurt', label: 'Yogurt & lassi', emoji: '🥛', re: /\b(yogh?urt|lassi|kefir)/ },
+      ],
+    },
+  },
+  {
+    id: 'coffee-tea',
+    label: 'Coffee, Tea & Cocoa',
+    emoji: '☕',
+    hint: 'Hot or iced, no alcohol',
+    rule: { cats: ['Coffee / Tea', 'Cocoa'], titleRe: /\b(coffee|tea|latte|chai|cocoa|hot chocolate|espresso|mocha|cappuccino)\b/, special: 'alcohol-free' },
+    question: {
+      id: 'temp',
+      title: 'Hot or iced?',
+      multi: false,
+      options: [
+        { id: 'hot', label: 'Hot', emoji: '♨️', re: /\b(hot|heat|warm|boil|steam|simmer|microwave)/, notRe: /\b(iced|ice cubes|over ice|chilled)\b/ },
+        { id: 'iced', label: 'Iced', emoji: '🧊', re: /\b(iced|ice|chill|cold|frapp)/ },
+        { id: 'either', label: 'Either is fine', emoji: '🤷' },
+      ],
+    },
+  },
+  {
+    id: 'cocktails',
+    label: 'Cocktails (21+)',
+    emoji: '🍸',
+    hint: 'Classics and new favorites',
+    rule: { cats: ['Cocktail', 'Ordinary Drink'], special: 'alcoholic' },
+    question: {
+      id: 'spirit',
+      title: 'Favorite spirit?',
+      subtitle: 'Pick any you like.',
+      multi: true,
+      options: [
+        { id: 'gin', label: 'Gin', emoji: '🌿', re: /\bgin\b/ },
+        { id: 'vodka', label: 'Vodka', emoji: '🧊', re: /\bvodka\b/ },
+        { id: 'rum', label: 'Rum', emoji: '🏝️', re: /\b(rum|cacha[cç]a)\b/ },
+        { id: 'tequila', label: 'Tequila & mezcal', emoji: '🌵', re: /\b(tequila|mezcal)\b/ },
+        { id: 'whiskey', label: 'Whiskey & bourbon', emoji: '🥃', re: /\b(whiske?y|bourbon|scotch|rye)\b/ },
+        { id: 'wine', label: 'Wine & bubbly', emoji: '🍾', re: /\b(wine|champagne|prosecco|vermouth|sherry|port)\b/ },
+      ],
+    },
+  },
+  {
+    id: 'party',
+    label: 'Punch & Party (21+)',
+    emoji: '🎉',
+    hint: 'Punch bowls, shots, beer drinks',
+    rule: { cats: ['Punch / Party Drink', 'Shot', 'Beer'], titleRe: /\b(punch|sangria|shots?|nog)\b/ },
+    question: DRINK_FLAVOR_QUESTION,
   },
 ];
 
@@ -609,6 +706,7 @@ export const CATEGORIES: CategoryDef[] = [
     hint: 'Anything goes',
     rule: { special: 'any' },
   },
+  ...DRINK_CATEGORY_DEFS,
 ];
 
 export const MOODS: MatchOption[] = [
@@ -689,9 +787,10 @@ export function cuisineForCountry(country: string | null | undefined): CuisineDe
 /** Categories split into the ones recommended for this meal and the rest. */
 export function categoriesForMeal(meal: MealId | null): { main: CategoryDef[]; more: CategoryDef[] } {
   const def = getMeal(meal);
-  if (!def) return { main: CATEGORIES, more: [] };
+  if (!def) return { main: CATEGORIES.filter((c) => !DRINK_CATEGORIES.has(c.id)), more: [] };
   const main = def.categories.map((id) => getCategory(id)!).filter(Boolean);
+  if (meal === 'drink') return { main, more: [] };
   const dessertOnly = new Set(['cakes', 'cookies', 'chocolate', 'fruity', 'pies', 'puddings']);
-  const more = CATEGORIES.filter((c) => !def.categories.includes(c.id) && (meal === 'dessert' || !dessertOnly.has(c.id)));
+  const more = CATEGORIES.filter((c) => !def.categories.includes(c.id) && !DRINK_CATEGORIES.has(c.id) && (meal === 'dessert' || !dessertOnly.has(c.id)));
   return { main, more };
 }

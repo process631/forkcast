@@ -15,6 +15,12 @@ export function isSweet(item: LibraryItem): boolean {
   return item.tags.some((t) => SWEET_TAGS.includes(t)) && !item.tags.includes('savory');
 }
 
+/** Drinks are tagged by their source; anything else is checked by ingredient. */
+export function isAlcoholic(item: LibraryItem): boolean {
+  if (item.tags.includes('alcoholic')) return true;
+  return violatesDiet(item.ingredientNames, ['no-alcohol']) !== null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Meal fit: how well a recipe suits breakfast / lunch / dinner ...     */
 /* ------------------------------------------------------------------ */
@@ -99,6 +105,10 @@ export function categoryStrength(item: LibraryItem, cat: CategoryDef): number {
     }
     case 'comfort':
       return strength;
+    case 'alcoholic':
+      return isAlcoholic(item) ? strength : 0;
+    case 'alcohol-free':
+      return isAlcoholic(item) ? 0 : strength;
     case 'spicy': {
       const heat = item.ingredientNames.filter((n) => /\b(chil[il]i|chillies|chilies|cayenne|jalape|scotch bonnet|habanero|harissa|sriracha|gochujang|curry|chipotle|piri)/.test(n)).length;
       return Math.max(strength, heat >= 2 ? 1.5 : heat === 1 ? 0.5 : 0);
@@ -140,6 +150,7 @@ export function scoreItem(item: LibraryItem, a: Answers, seed = 0): Scored | nul
   if ((item.kind === 'drink') !== (a.meal === 'drink')) return null;
   // Hard filters: diets and things to avoid.
   if (violatesDiet(item.ingredientNames, a.diets, item.category)) return null;
+  if (a.diets.includes('no-alcohol') && isAlcoholic(item)) return null;
   if (a.avoid.length && mentionsAny(item.ingredientNames, a.avoid).length) return null;
   if (a.avoid.some((w) => w.trim() && item.title.includes(w.toLowerCase().trim()))) return null;
 
@@ -147,7 +158,7 @@ export function scoreItem(item: LibraryItem, a: Answers, seed = 0): Scored | nul
   const fit = mealFit(item, a.meal);
   if (a.meal === 'dessert' && fit === 0) return null;
   // Savory categories never show desserts (no "rice pudding" for a rice dinner).
-  if (cat && !SWEET_OK.has(cat.id) && isSweet(item)) return null;
+  if (cat && item.kind === 'food' && !SWEET_OK.has(cat.id) && isSweet(item)) return null;
 
   const strength = cat ? categoryStrength(item, cat) : 1;
   // "Close" = right kind of food for the wrong meal, or the right meal but a different kind of food.

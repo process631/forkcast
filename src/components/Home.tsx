@@ -51,7 +51,7 @@ export function Home() {
             </button>
           </p>
         )}
-        <p className="hero-note">Free, no sign-up: 800+ real recipes with photos, videos and step-by-step cook mode.</p>
+        <p className="hero-note">Free, no sign-up: 1,200+ real recipes and drinks with photos, videos and step-by-step cook mode.</p>
       </section>
 
       <section className="section">

@@ -66,6 +66,7 @@ export function normalizeDummy(r: RawDummyRecipe): LibraryItem {
   const ingredients = r.ingredients.map(splitIngredient).filter((i) => i.name);
   const names = ingredients.map((i) => i.name);
   const drink = (r.mealType ?? []).some((m) => m.toLowerCase() === 'beverage');
+  const cocktail = drink && /\b(cocktail|caipirinha|mojito)\b/i.test([r.name, ...(r.tags ?? [])].join(' '));
   const cuisine = r.cuisine && CUISINE_COUNTRY[r.cuisine] ? r.cuisine : undefined;
   const minutes = (r.prepTimeMinutes ?? 0) + (r.cookTimeMinutes ?? 0);
   return buildItem({
@@ -74,10 +75,10 @@ export function normalizeDummy(r: RawDummyRecipe): LibraryItem {
     kind: drink ? 'drink' : 'food',
     title: r.name,
     image: r.image,
-    category: drink ? (/\b(cocktail|caipirinha|mojito)\b/i.test([r.name, ...(r.tags ?? [])].join(' ')) ? 'Cocktail' : 'Shake') : dummyCategory(r, names),
+    category: drink ? (cocktail ? 'Cocktail' : 'Shake') : dummyCategory(r, names),
     cuisine,
     country: cuisine ? CUISINE_COUNTRY[cuisine] : '',
-    tags: r.tags ?? [],
+    tags: drink ? [...(r.tags ?? []), cocktail ? 'Alcoholic' : 'Non-alcoholic'] : r.tags ?? [],
     ingredients,
     instructions: r.instructions.join('\n'),
     minutes: minutes > 0 ? minutes : undefined,

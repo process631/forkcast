@@ -56,6 +56,9 @@ export function Settings() {
           <li>
             More recipes from around the world: <a href="https://dummyjson.com/docs/recipes" target="_blank" rel="noreferrer">DummyJSON</a> (free API)
           </li>
+          <li>
+            Drinks, drink photos and ingredient pictures: <a href="https://www.thecocktaildb.com" target="_blank" rel="noreferrer">TheCocktailDB</a> (free API)
+          </li>
         </ul>
       </section>
     </div>

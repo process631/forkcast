@@ -123,7 +123,7 @@ function CategoryStep({ answers, onPick }: { answers: Answers; onPick: (id: stri
   const meal = getMeal(answers.meal);
   return (
     <>
-      <StepHeading title={`What kind of ${meal?.id === 'dessert' ? 'dessert' : 'food'}?`} subtitle={meal ? `${meal.emoji} ${meal.label}` : undefined} />
+      <StepHeading title={`What kind of ${meal?.id === 'dessert' ? 'dessert' : meal?.id === 'drink' ? 'drink' : 'food'}?`} subtitle={meal ? `${meal.emoji} ${meal.label}` : undefined} />
       <div className="option-grid">
         {main.map((c) => (
           <OptionButton key={c.id} option={c} selected={answers.category === c.id} onClick={() => onPick(c.id)} />
