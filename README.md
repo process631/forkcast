@@ -4,8 +4,8 @@
 
 Forkcast helps you decide what to cook and then walks you through it step by step:
 
-1. **Pick a meal**: Breakfast & Brunch, Lunch, Dinner, Side Dish, Snack & Appetizer, or Dessert.
-2. **Pick a kind of food**: Pasta, Chicken, Sandwiches, Soups, Sweet Treats… The list adapts to the meal you picked.
+1. **Pick a meal**: Breakfast & Brunch, Lunch, Dinner, Side Dish, Snack & Appetizer, Dessert, or **Drinks**.
+2. **Pick a kind of food**: Pasta, Chicken, Stir-fries, BBQ & Kebabs, Pizza & Flatbreads, Tacos & Empanadas, Dumplings, Soups, Sweet Treats… The list adapts to the meal you picked. Drinks has Mocktails, Shakes & Smoothies, Coffee/Tea/Cocoa, Cocktails (21+) and Punch & Party.
 3. **Answer a few quick questions** (skip any of them):
    - one follow-up for that kind of food ("Which meat?", "What sauce style?", "Happy to turn the oven on?")
    - flavor mood
@@ -21,7 +21,15 @@ Forkcast helps you decide what to cook and then walks you through it step by ste
    - an embedded video
    - a full-screen **cook mode** that keeps your screen on
 
-It's free with no sign-up, using 790+ real recipes from [TheMealDB](https://www.themealdb.com).
+It's free with no sign-up, using 1,200+ real recipes and drinks from three free, keyless APIs:
+
+| Source | What it adds | Ids |
+|---|---|---|
+| [TheMealDB](https://www.themealdb.com) | ~790 recipes with photos, ingredient pictures and videos | `mdb-…` |
+| [DummyJSON](https://dummyjson.com/docs/recipes) | ~50 world recipes with real prep/cook times and difficulty | `djr-…` |
+| [TheCocktailDB](https://www.thecocktaildb.com) | ~420 drinks: cocktails, mocktails, shakes, coffee & tea | `cdb-…` |
+
+**Version 1.1.0**: stable and live.
 
 ## Run it
 
@@ -63,13 +71,24 @@ Every push to `main` runs `.github/workflows/deploy.yml`, which:
 
 The site uses relative paths (`base: './'` in `vite.config.ts`) and `#/…` page addresses, so it works from the `/forkcast/` sub-folder without any server setup.
 
+## Loading the library (and what happens offline)
+
+`src/lib/library.ts` downloads every source once and caches each one in IndexedDB for a week.
+
+- Each request times out after 12 seconds and is retried once (`src/lib/net.ts`).
+- If one source is down, the others still load, and the results page says which source is missing, with a **Try again** link.
+- If the network fails, an out-of-date saved copy is used rather than nothing. A partial download is used but never cached.
+- When the browser comes back online, the library reloads quietly.
+- **Settings → Refresh recipe library** forces a fresh download.
+
 ## How it picks recipes
 
 All of this lives in `src/lib/match.ts`:
 
-1. **Hard filters.** Diets and allergies (vegetarian, vegan, pescatarian, gluten-free, dairy-free, nut-free, egg-free, low-carb, no pork, no alcohol) and your "avoid" list remove recipes based on ingredient names.
-2. **Category rules.** Each food type has keyword and category rules, defined in `src/data/taxonomy.ts`. If too few recipes match, the closest picks are shown and labeled.
-3. **Scoring.** Each recipe gets a score for:
+1. **Food or drink.** Drinks only appear under the Drinks meal, and food never does.
+2. **Hard filters.** Diets and allergies (vegetarian, vegan, pescatarian, gluten-free, dairy-free, nut-free, egg-free, low-carb, no pork, no alcohol) and your "avoid" list remove recipes based on ingredient names. "No alcohol" also removes every alcoholic drink.
+3. **Category rules.** Each food type has keyword and category rules, defined in `src/data/taxonomy.ts`. If too few recipes match, the closest picks are shown and labeled.
+4. **Scoring.** Each recipe gets a score for:
    - how well it fits the meal
    - your follow-up answer
    - flavor mood
@@ -77,7 +96,7 @@ All of this lives in `src/lib/match.ts`:
    - ingredients to use up
    - time and skill, estimated from the instructions (e.g. "simmer 20 minutes", "chill overnight", knead/deep-fry)
    - a little randomness, so "Show me different options" gives fresh picks
-4. **Variety.** Near-duplicates (e.g. "Fettuccine Alfredo" vs. "Fettucine alfredo") are never shown together.
+5. **Variety.** Near-duplicates (e.g. "Fettuccine Alfredo" vs. "Fettucine alfredo") are never shown together.
 
 ## Project layout
 
@@ -85,7 +104,12 @@ All of this lives in `src/lib/match.ts`:
 src/
   data/taxonomy.ts      meals, categories, follow-up questions, cuisines, diets
   lib/
-    mealdb.ts           loads & caches the TheMealDB catalog (IndexedDB, 7 days)
+    library.ts          loads every source, caches each for 7 days, reports partial/offline loads
+    net.ts              fetch with timeout + retry and friendly error messages
+    item.ts             the shared recipe shape every source is converted into
+    mealdb.ts           TheMealDB source
+    dummyjson.ts        DummyJSON source
+    cocktaildb.ts       TheCocktailDB source (drinks)
     parse.ts            instructions → steps, timers, time & difficulty estimates
     diet.ts             diet / allergy checks
     match.ts            the recommendation engine
@@ -109,7 +133,13 @@ They were taken out to keep the app simple. The full AI version is saved in git 
 
 - **The page didn't change after editing code.** On Windows, Vite's file watcher occasionally misses quick edits. Stop the dev server (Ctrl+C) and run `npm run dev` again.
 - **"Couldn't load the recipe library."** Check your internet connection. After the first load, the library is cached for a week.
+- **"…couldn't be reached, so you're seeing fewer recipes than usual."** One source was down. Tap **Try again**, or carry on with the others.
+
+## Roadmap
+
+- Done in 1.1: more sources (DummyJSON, TheCocktailDB), a Drinks meal, 5 new kinds of food, more cuisines and moods, sturdier offline/network handling.
+- Next ideas: optional keyed sources such as Spoonacular (they would need a small backend to keep the key secret), and maybe bringing back the AI features (see below).
 
 ## Credits
 
-Recipes, photos, ingredient pictures and videos: [TheMealDB](https://www.themealdb.com). Its free developer key is for personal and educational use.
+Recipes, photos, ingredient pictures and videos: [TheMealDB](https://www.themealdb.com). Drinks: [TheCocktailDB](https://www.thecocktaildb.com). Their free developer key is for personal and educational use. Extra recipes: [DummyJSON](https://dummyjson.com).
