@@ -1,0 +1,154 @@
+import { cuisineForCountry } from '../data/taxonomy';
+import { estimateDifficulty, estimateMinutes, ingredientImage, splitInstructions, youtubeId } from './parse';
+import { idbGet, idbSet } from './storage';
+import type { Ingredient, Recipe } from './types';
+
+/**
+ * TheMealDB (https://www.themealdb.com) — a free recipe API with ~800 recipes, photos and videos.
+ * The free developer key "1" is fine for personal and educational projects.
+ */
+const API = 'https://www.themealdb.com/api/json/v1/1';
+const CACHE_KEY = 'library:v1';
+const CACHE_DAYS = 7;
+
+export interface RawMeal {
+  idMeal: string;
+  strMeal: string;
+  strCategory: string | null;
+  strArea: string | null;
+  strCountry?: string | null;
+  strInstructions: string | null;
+  strMealThumb: string | null;
+  strTags: string | null;
+  strYoutube: string | null;
+  strSource: string | null;
+  [key: string]: string | null | undefined;
+}
+
+/** A library recipe plus lower-cased text used by the matching engine. */
+export interface LibraryItem {
+  recipe: Recipe;
+  title: string;
+  category: string;
+  tags: string[];
+  ingredientNames: string[];
+  /** Ingredient names without stocks/sauces, for "main ingredient" checks. */
+  mainIngredients: string;
+  /** Everything (title, tags, ingredients, instructions) for keyword checks. */
+  text: string;
+  country: string;
+}
+
+/** Adjective-style cuisine labels for the newer TheMealDB entries that only have a country. */
+const COUNTRY_ADJECTIVE: Record<string, string> = {
+  'United States': 'American', 'United Kingdom': 'British', France: 'French', India: 'Indian', Norway: 'Norwegian',
+  Netherlands: 'Dutch', Argentina: 'Argentine', Venezuela: 'Venezuelan', Slovakia: 'Slovak', Brazil: 'Brazilian',
+  Colombia: 'Colombian', Cambodia: 'Cambodian', Dominica: 'Dominican', Albania: 'Albanian', Denmark: 'Danish',
+  Bulgaria: 'Bulgarian', 'Cayman Islands': 'Caymanian', Chile: 'Chilean', Afghanistan: 'Afghan', Barbados: 'Barbadian',
+  'Costa Rica': 'Costa Rican', Belgium: 'Belgian', Estonia: 'Estonian', Aruba: 'Aruban', Cuba: 'Cuban', Botswana: 'Botswanan',
+  'Antigua and Barbuda': 'Antiguan', Laos: 'Lao', Austria: 'Austrian', Armenia: 'Armenian', Bangladesh: 'Bangladeshi',
+  Andorra: 'Andorran', Angola: 'Angolan', Azerbaijan: 'Azerbaijani', Bahamas: 'Bahamian',
+};
+
+function cuisineLabel(area: string | null, country: string | null | undefined): string | undefined {
+  if (area && !COUNTRY_ADJECTIVE[area]) return area;
+  if (area && COUNTRY_ADJECTIVE[area]) return COUNTRY_ADJECTIVE[area];
+  if (country) return COUNTRY_ADJECTIVE[country] ?? country;
+  return undefined;
+}
+
+export function normalizeMeal(m: RawMeal): LibraryItem {
+  const ingredients: Ingredient[] = [];
+  for (let i = 1; i <= 20; i++) {
+    const name = (m[`strIngredient${i}`] || '').trim();
+    if (!name) continue;
+    ingredients.push({ name, measure: (m[`strMeasure${i}`] || '').trim(), image: ingredientImage(name) });
+  }
+  const steps = splitInstructions(m.strInstructions || '');
+  const instructions = m.strInstructions || '';
+  const { total, passive } = estimateMinutes(ingredients.length, steps);
+  const tags = (m.strTags || '').split(',').map((t) => t.trim()).filter(Boolean);
+  const country = m.strCountry || '';
+  const recipe: Recipe = {
+    id: `mdb-${m.idMeal}`,
+    source: 'library',
+    title: m.strMeal.trim(),
+    image: m.strMealThumb || undefined,
+    category: m.strCategory || undefined,
+    cuisine: cuisineLabel(m.strArea, country),
+    cuisineGroup: cuisineForCountry(country)?.id,
+    tags,
+    totalMinutes: total,
+    hasPassiveTime: passive,
+    difficulty: estimateDifficulty(ingredients.length, steps.length, instructions, total),
+    ingredients,
+    steps,
+    youtube: youtubeId(m.strYoutube),
+    sourceUrl: m.strSource || undefined,
+  };
+  const ingredientNames = ingredients.map((i) => i.name.toLowerCase());
+  const mainIngredients = ingredientNames.filter((n) => !/\b(stock|broth|bouillon|cubes?|gravy|sauce|fat|dripping|granules)\b/.test(n)).join(' | ');
+  const title = recipe.title.toLowerCase();
+  return {
+    recipe,
+    title,
+    category: recipe.category || '',
+    tags: tags.map((t) => t.toLowerCase()),
+    ingredientNames,
+    mainIngredients,
+    text: [title, tags.join(' '), ingredientNames.join(' '), instructions].join(' \n ').toLowerCase(),
+    country,
+  };
+}
+
+async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`TheMealDB returned ${res.status}`);
+  return (await res.json()) as T;
+}
+
+let libraryPromise: Promise<LibraryItem[]> | null = null;
+
+/**
+ * Load the whole TheMealDB catalog (one request per first letter), cached for a week.
+ * Calls share one in-flight promise, so warming it up early is cheap.
+ */
+export function loadLibrary(): Promise<LibraryItem[]> {
+  if (!libraryPromise) {
+    libraryPromise = loadLibraryUncached().catch((err) => {
+      libraryPromise = null;
+      throw err;
+    });
+  }
+  return libraryPromise;
+}
+
+async function loadLibraryUncached(): Promise<LibraryItem[]> {
+  const cached = await idbGet<{ at: number; meals: RawMeal[] }>(CACHE_KEY);
+  const fresh = cached && Date.now() - cached.at < CACHE_DAYS * 86400_000;
+  if (cached && fresh) return cached.meals.map(normalizeMeal);
+
+  const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  const results = await Promise.allSettled(
+    letters.map((l) => fetchJson<{ meals: RawMeal[] | null }>(`${API}/search.php?f=${l}`)),
+  );
+  const meals = results.flatMap((r) => (r.status === 'fulfilled' && r.value.meals ? r.value.meals : []));
+  const failures = results.filter((r) => r.status === 'rejected').length;
+
+  if (meals.length === 0 || failures > 5) {
+    if (cached) return cached.meals.map(normalizeMeal); // stale is better than nothing
+    if (meals.length === 0) throw new Error('Could not reach the recipe library. Check your internet connection and try again.');
+  }
+  if (failures === 0) await idbSet(CACHE_KEY, { at: Date.now(), meals });
+  return meals.map(normalizeMeal);
+}
+
+/** Look up one library recipe by its app id ("mdb-52772"). */
+export async function getLibraryRecipe(id: string): Promise<Recipe | undefined> {
+  const library = await loadLibrary().catch(() => [] as LibraryItem[]);
+  const hit = library.find((item) => item.recipe.id === id);
+  if (hit) return hit.recipe;
+  // Not in the cached catalog (e.g. a brand-new recipe) — ask the API directly.
+  const raw = await fetchJson<{ meals: RawMeal[] | null }>(`${API}/lookup.php?i=${encodeURIComponent(id.replace(/^mdb-/, ''))}`);
+  return raw.meals?.[0] ? normalizeMeal(raw.meals[0]).recipe : undefined;
+}
