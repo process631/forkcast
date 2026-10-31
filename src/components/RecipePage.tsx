@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { copyText } from '../lib/clipboard';
 import { cookbookStore, toggleSaved, useStore } from '../lib/store';
+import { httpUrl } from '../lib/urls';
 import type { Recipe } from '../lib/types';
 import { useRecipe } from '../lib/useRecipe';
 import { goBack, href } from '../router';
@@ -54,6 +55,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
   const isSaved = saved.some((e) => e.recipe.id === recipe.id);
+  const source = httpUrl(recipe.sourceUrl);
 
   const toggleCheck = (i: number) =>
     setChecked((prev) => {
@@ -156,9 +158,9 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
           <footer className="recipe-footer">
             <p className="fine-print">
                 Recipe from <a href="https://www.themealdb.com" target="_blank" rel="noreferrer">TheMealDB</a>
-                {recipe.sourceUrl && (
+                {source && (
                   <>
-                    {' '}· <a href={recipe.sourceUrl} target="_blank" rel="noreferrer">Original source</a>
+                    {' '}· <a href={source} target="_blank" rel="noreferrer">Original source</a>
                   </>
                 )}
                 . Times and difficulty are Forkcast estimates.

@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { formatMinutes } from '../lib/parse';
 import type { Recipe } from '../lib/types';
+import { safeImageSrc } from '../lib/urls';
 
 export function Spinner({ label }: { label?: string }) {
   return (
@@ -18,8 +19,9 @@ export function Chip({ children, tone }: { children: ReactNode; tone?: 'accent' 
 /** Image that quietly disappears (or shows a fallback) if it fails to load. */
 export function Img({ src, alt, className, fallback, loading = 'lazy' }: { src?: string; alt: string; className?: string; fallback?: ReactNode; loading?: 'lazy' | 'eager' }) {
   const [failed, setFailed] = useState(false);
-  if (!src || failed) return <>{fallback ?? null}</>;
-  return <img src={src} alt={alt} className={className} loading={loading} onError={() => setFailed(true)} />;
+  const safe = safeImageSrc(src);
+  if (!safe || failed) return <>{fallback ?? null}</>;
+  return <img src={safe} alt={alt} className={className} loading={loading} onError={() => setFailed(true)} />;
 }
 
 /** Colorful emoji tile used when a dish has no photo yet. */

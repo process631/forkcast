@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ingredientsInStep } from '../lib/parse';
 import type { Recipe } from '../lib/types';
+import { YOUTUBE_ID } from '../lib/urls';
 import { EmojiArt, Img } from './ui';
 
 /** The big dish photo at the top of a recipe. */
@@ -54,6 +55,7 @@ export function StepVisual({ recipe, index, large = false }: { recipe: Recipe; i
 /** Click-to-load YouTube player (no YouTube requests until you press play). */
 export function VideoEmbed({ id, title }: { id: string; title: string }) {
   const [playing, setPlaying] = useState(false);
+  if (!YOUTUBE_ID.test(id)) return null;
   if (playing) {
     return (
       <div className="video">

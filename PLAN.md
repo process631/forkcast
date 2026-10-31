@@ -59,16 +59,12 @@ Browser (React + TypeScript, built with Vite)
  │    TheMealDB library cached in IndexedDB (7 days)   src/lib/mealdb.ts
  │    Recipe parsing: steps, timers, time & difficulty src/lib/parse.ts
  │    Diet / allergy filters                           src/lib/diet.ts
- ├─ AI chef (optional)                                 src/lib/ai.ts, src/lib/gemini.ts
- │    ideas → full recipe (JSON schema output)
- │    dish + step images, cached in IndexedDB
- ├─ Free photos (Wikimedia / Openverse)                src/lib/photos.ts
+ ├─ AI chef and free-photo search (removed)            see commit f14113e
  └─ Pages: Home, Results, Recipe, Cook mode, Cookbook, Settings
 ```
 
 * **No backend.** The app is static, so it runs locally with `npm run dev` and can be deployed for free (Netlify, Vercel, GitHub Pages).
-* **Gemini key.** You paste it into Settings. It stays in your browser's localStorage and is only sent to Google.
-* **Model choice.** Model names change often, so Settings lists the models your key can actually use, and the app automatically falls back to another model if one is retired.
+* **No API secret.** TheMealDB's public test key (`1`) is the key their docs publish for client-side use. The removed Gemini client kept a key in the browser only; that code is in commit `f14113e`, and the current app deletes any leftover `forkcast.settings` value on startup.
 
 ### Matching engine (free mode)
 
@@ -113,7 +109,7 @@ Time and difficulty are estimated from the instructions (for example "simmer for
   - source link
 - [x] Cook mode: one step at a time, big text, timers with alarm, keyboard/swipe navigation, screen kept awake
 - [x] Cookbook: saved favorites + recently viewed
-- [x] Settings: Gemini key, model pickers, AI image level, connection test, cache clearing
+- [x] Settings: clear the cookbook and refresh the recipe library (Gemini key and AI image controls were removed with the AI chef)
 - [x] Light/dark theme, mobile-friendly layout
 - [x] Unit tests for parsing, diet filters, matching, and Gemini response handling
 

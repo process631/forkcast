@@ -25,7 +25,7 @@ export function Cookbook() {
         <div className="empty">
           <div className="empty-emoji">{tab === 'saved' ? '📖' : '🕘'}</div>
           <h2>{tab === 'saved' ? 'No saved recipes yet' : 'Nothing viewed yet'}</h2>
-          <p className="muted">{tab === 'saved' ? 'Tap “Save” on any recipe to keep it here, including AI recipes.' : 'Recipes you open will show up here.'}</p>
+          <p className="muted">{tab === 'saved' ? 'Tap “Save” on any recipe to keep it here.' : 'Recipes you open will show up here.'}</p>
           <a href={href('/plan')} className="btn btn-primary">
             Find something to cook
           </a>
