@@ -1,6 +1,7 @@
 import { cuisineForCountry } from '../data/taxonomy';
 import { estimateDifficulty, estimateMinutes, ingredientImage, splitInstructions, youtubeId } from './parse';
 import { idbGet, idbSet } from './storage';
+import { httpUrl, safeImageSrc } from './urls';
 import type { Ingredient, Recipe } from './types';
 
 /**
@@ -72,7 +73,7 @@ export function normalizeMeal(m: RawMeal): LibraryItem {
   const recipe: Recipe = {
     id: `mdb-${m.idMeal}`,
     title: m.strMeal.trim(),
-    image: m.strMealThumb || undefined,
+    image: safeImageSrc(m.strMealThumb),
     category: m.strCategory || undefined,
     cuisine: cuisineLabel(m.strArea, country),
     cuisineGroup: cuisineForCountry(country)?.id,
@@ -83,7 +84,7 @@ export function normalizeMeal(m: RawMeal): LibraryItem {
     ingredients,
     steps,
     youtube: youtubeId(m.strYoutube),
-    sourceUrl: m.strSource || undefined,
+    sourceUrl: httpUrl(m.strSource),
   };
   const ingredientNames = ingredients.map((i) => i.name.toLowerCase());
   const mainIngredients = ingredientNames.filter((n) => !/\b(stock|broth|bouillon|cubes?|gravy|sauce|fat|dripping|granules)\b/.test(n)).join(' | ');

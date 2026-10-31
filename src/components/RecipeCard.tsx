@@ -14,7 +14,7 @@ export function SuggestionCard({ suggestion, index }: { suggestion: Suggestion; 
     <a href={href(`/recipe/${recipe.id}`)} className="card suggestion-card" style={{ animationDelay: `${index * 60}ms` }}>
       <div className="card-media">
         <DishThumb recipe={recipe} className="card-img" />
-        {recipe.youtube && <span className="media-badge">▶ Video</span>}
+        {recipe.youtube && <span className="media-badge">Video</span>}
       </div>
       <div className="card-body">
         <h3 className="card-title">{recipe.title}</h3>

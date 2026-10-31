@@ -70,11 +70,6 @@ export async function idbSet(key: string, value: unknown): Promise<void> {
   await run('readwrite', (s) => s.put(value, key));
 }
 
-export async function idbDelete(key: string): Promise<void> {
-  memory.delete(key);
-  await run('readwrite', (s) => s.delete(key));
-}
-
 /** Delete every key that starts with `prefix` (e.g. all cached images). */
 export async function idbClear(prefix?: string): Promise<void> {
   for (const k of [...memory.keys()]) if (!prefix || k.startsWith(prefix)) memory.delete(k);

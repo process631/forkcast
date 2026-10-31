@@ -34,13 +34,13 @@ export function Home() {
       <section className="hero">
         <p className="eyebrow">Your kitchen sidekick</p>
         <h1>What should I cook today?</h1>
-        <p className="lead">Answer a few quick questions and get recipes picked for you, with photos, ingredient pictures for every step, timers and a hands-free cook mode.</p>
+        <p className="lead">Answer a few questions and get recipes picked for you, with photos, step-by-step instructions, and timers.</p>
         <div className="hero-actions">
           <button type="button" className="btn btn-primary btn-lg" onClick={() => startWizard()}>
-            Help me decide →
+            Find a recipe
           </button>
           <button type="button" className="btn btn-ghost btn-lg" onClick={surprise} disabled={surprising}>
-            {surprising ? 'Rolling the dice…' : '🎲 Surprise me'}
+            {surprising ? 'Finding a recipe…' : 'Surprise me'}
           </button>
         </div>
         {error && <p className="form-error">{error}</p>}
@@ -54,7 +54,7 @@ export function Home() {
             <button key={m.id} type="button" className={`option-card${m.id === suggestedMeal ? ' option-suggested' : ''}`} onClick={() => startWizard(m.id as MealId)}>
               <span className="option-emoji" aria-hidden="true">{m.emoji}</span>
               <span className="option-label">{m.label}</span>
-              <span className="option-hint">{m.id === suggestedMeal ? 'Perfect for right now' : m.hint}</span>
+              <span className="option-hint">{m.id === suggestedMeal ? 'Suggested for this time of day' : m.hint}</span>
             </button>
           ))}
         </div>
@@ -64,7 +64,7 @@ export function Home() {
         <section className="section">
           <div className="section-head">
             <h2 className="section-title">{saved.length ? 'Your saved recipes' : 'Recently viewed'}</h2>
-            <a href={href('/cookbook')} className="link">Open cookbook →</a>
+            <a href={href('/cookbook')} className="link">Open cookbook</a>
           </div>
           <div className="tile-row">
             {(saved.length ? saved : recent).slice(0, 8).map((e) => (

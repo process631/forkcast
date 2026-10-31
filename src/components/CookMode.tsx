@@ -99,15 +99,15 @@ function CookView({ recipe, initialStep }: { recipe: Recipe; initialStep: number
       }}
     >
       <div className="cook-top">
-        <a href={href(`/recipe/${recipe.id}`)} className="icon-btn" aria-label="Exit cook mode">
-          ✕
+        <a href={href(`/recipe/${recipe.id}`)} className="btn btn-ghost btn-sm" aria-label="Exit cook mode">
+          Exit
         </a>
         <div className="cook-title">
           <span className="cook-recipe">{recipe.title}</span>
           <span className="cook-count">{done ? 'All done!' : `Step ${index + 1} of ${total}`}</span>
         </div>
         <button type="button" className="btn btn-sm btn-soft" onClick={() => setShowIngredients((s) => !s)} aria-expanded={showIngredients}>
-          🧺 <span className="hide-sm">Ingredients</span>
+          Ingredients
         </button>
       </div>
       <div className="cook-progress">
@@ -136,11 +136,11 @@ function CookView({ recipe, initialStep }: { recipe: Recipe; initialStep: number
         {done ? (
           <div className="cook-done">
             <DishHero recipe={recipe} />
-            <h1>🎉 Enjoy your {recipe.title}!</h1>
+            <h1>Enjoy your {recipe.title}</h1>
             <p className="muted">Nice work, chef.</p>
             <div className="row center">
               <button type="button" className="btn btn-primary btn-lg" onClick={() => !saved.some((e) => e.recipe.id === recipe.id) && toggleSaved(recipe)}>
-                {saved.some((e) => e.recipe.id === recipe.id) ? '❤️ In your cookbook' : '🤍 Save to cookbook'}
+                {saved.some((e) => e.recipe.id === recipe.id) ? 'Saved to cookbook' : 'Save to cookbook'}
               </button>
               <a href={href('/plan')} className="btn btn-ghost btn-lg">
                 Cook something else
@@ -173,11 +173,11 @@ function CookView({ recipe, initialStep }: { recipe: Recipe; initialStep: number
 
       <div className="cook-nav">
         <button type="button" className="btn btn-ghost btn-lg" onClick={() => go(index - 1)} disabled={index === 0}>
-          ← Back
+          Previous
         </button>
         {!done && (
           <button type="button" className="btn btn-primary btn-lg" onClick={() => go(index + 1)}>
-            {index === total - 1 ? 'Finish 🎉' : 'Next step →'}
+            {index === total - 1 ? 'Finish' : 'Next step'}
           </button>
         )}
       </div>

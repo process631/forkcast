@@ -14,18 +14,18 @@ function summarize(a: Answers): string[] {
   const out: string[] = [];
   const meal = getMeal(a.meal);
   const cat = getCategory(a.category);
-  if (meal) out.push(`${meal.emoji} ${meal.label}`);
-  if (cat) out.push(`${cat.emoji} ${cat.label}`);
-  cat?.question?.options.filter((o) => a.styles.includes(o.id)).forEach((o) => out.push(`${o.emoji ?? ''} ${o.label}`));
-  MOODS.filter((m) => a.moods.includes(m.id)).forEach((m) => out.push(`${m.emoji} ${m.label}`));
+  if (meal) out.push(meal.label);
+  if (cat) out.push(cat.label);
+  cat?.question?.options.filter((o) => a.styles.includes(o.id)).forEach((o) => out.push(o.label));
+  MOODS.filter((m) => a.moods.includes(m.id)).forEach((m) => out.push(m.label));
   const t = TIMES.find((x) => x.id === a.time);
-  if (t && t.id !== 'any') out.push(`${t.emoji} ${t.label}`);
+  if (t && t.id !== 'any') out.push(t.label);
   const s = SKILLS.find((x) => x.id === a.skill);
-  if (s && s.id !== 'any') out.push(`${s.emoji} ${s.label}`);
-  CUISINES.filter((c) => a.cuisines.includes(c.id)).forEach((c) => out.push(`${c.emoji} ${c.label}`));
-  DIETS.filter((d) => a.diets.includes(d.id)).forEach((d) => out.push(`${d.emoji} ${d.label}`));
-  a.include.forEach((i) => out.push(`🧺 ${i}`));
-  a.avoid.forEach((i) => out.push(`🚫 ${i}`));
+  if (s && s.id !== 'any') out.push(s.label);
+  CUISINES.filter((c) => a.cuisines.includes(c.id)).forEach((c) => out.push(c.label));
+  DIETS.filter((d) => a.diets.includes(d.id)).forEach((d) => out.push(d.label));
+  a.include.forEach((i) => out.push(`Use ${i}`));
+  a.avoid.forEach((i) => out.push(`Avoid ${i}`));
   return out;
 }
 
@@ -81,23 +81,23 @@ export function Results() {
   return (
     <div className="container page">
       <div className="results-head">
-        <p className="eyebrow">Picked for you</p>
-        <h1>Here’s what we think you’ll love</h1>
+        <p className="eyebrow">Results</p>
+        <h1>Recipes for you</h1>
         <div className="summary-chips">
           {summarize(answers).map((s) => (
             <Chip key={s} tone="muted">
               {s}
             </Chip>
           ))}
-          <a href={href('/plan/kind')} className="link small">
-            Change answers
+          <a href={href('/plan/details')} className="link small">
+            Edit preferences
           </a>
         </div>
       </div>
 
       <section className="section">
         <div className="section-head">
-          <h2 className="section-title">📚 Recipes that match</h2>
+          <h2 className="section-title">Matching recipes</h2>
           {!loading && suggestions.length > 0 && <span className="muted small">With photos{suggestions.some((s) => s.recipe.youtube) ? ' & videos' : ''}</span>}
         </div>
         {error && (
@@ -106,7 +106,7 @@ export function Results() {
           </ErrorBox>
         )}
         {allClose && !loading && <p className="notice">Nothing in the library matches every answer exactly, so these are the closest picks.</p>}
-        <div className="card-grid">
+        <div className="card-grid" aria-busy={loading || undefined} aria-live="polite">
           {loading && !suggestions.length
             ? [0, 1, 2].map((i) => <SkeletonCard key={i} />)
             : suggestions.map((s, i) => <SuggestionCard key={s.recipe.id} suggestion={s} index={i} />)}
@@ -118,20 +118,19 @@ export function Results() {
 
       {nothing && (
         <div className="empty">
-          <div className="empty-emoji">🤔</div>
           <h2>No recipes match all of that</h2>
           <p className="muted">Try removing a filter like a cuisine, a diet or an ingredient to avoid.</p>
-          <a href={href('/plan/kind')} className="btn btn-primary">
-            Change my answers
+          <a href={href('/plan/details')} className="btn btn-primary">
+            Edit preferences
           </a>
         </div>
       )}
 
       <div className="results-actions">
-        <button type="button" className="btn btn-primary btn-lg" onClick={() => search(false)} disabled={loading}>
-          🔀 Show me different options
+        <button type="button" className="btn btn-ghost btn-lg" onClick={() => search(false)} disabled={loading}>
+          {loading ? 'Looking…' : 'Show different options'}
         </button>
-        <a href={href('/plan')} className="btn btn-ghost btn-lg">
+        <a href={href('/plan')} className="btn btn-soft btn-lg">
           Start over
         </a>
       </div>

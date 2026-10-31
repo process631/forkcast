@@ -3,6 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "description": "Forkcast - helps you decide what to cook, then walks you through it step by step.",
+  "engines": {
+    "node": ">=20"
+  },
+  "overrides": {
+    "undici": "7.30.1"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
