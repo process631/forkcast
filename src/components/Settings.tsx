@@ -13,11 +13,12 @@ export function Settings() {
   return (
     <div className="container page narrow">
       <p className="eyebrow">Settings</p>
-      <h1>Make Forkcast yours</h1>
+      <h1>Settings</h1>
+      <p className="muted">Cookbook, history, and the recipe library stay in this browser.</p>
 
-      <section className="panel">
-        <h2>🧹 Data on this device</h2>
-        <p className="muted">Your cookbook, history and the downloaded recipe library are stored only in this browser.</p>
+      <section className="panel" aria-labelledby="data-heading">
+        <h2 id="data-heading">Data on this device</h2>
+        <p className="muted">Refreshing the library downloads recipes again. Clearing the cookbook removes saved recipes and recent history.</p>
         <div className="row wrap">
           <button
             type="button"
@@ -42,11 +43,11 @@ export function Settings() {
             Clear cookbook
           </button>
         </div>
-        {note && <p className="form-ok">{note}</p>}
+        <p className="form-ok" role="status" aria-live="polite">{note}</p>
       </section>
 
-      <section className="panel">
-        <h2>🙏 Credits</h2>
+      <section className="panel" aria-labelledby="credits-heading">
+        <h2 id="credits-heading">Credits</h2>
         <ul className="credits-list">
           <li>
             Recipes, dish photos, ingredient pictures and videos: <a href="https://www.themealdb.com" target="_blank" rel="noreferrer">TheMealDB</a> (free API)

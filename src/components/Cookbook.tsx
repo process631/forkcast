@@ -10,22 +10,32 @@ export function Cookbook() {
 
   return (
     <div className="container page">
-      <p className="eyebrow">Your collection</p>
-      <h1>My cookbook</h1>
-      <div className="tabs" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === 'saved'} className={`tab${tab === 'saved' ? ' active' : ''}`} onClick={() => setTab('saved')}>
-          ❤️ Saved ({saved.length})
+      <p className="eyebrow">Library</p>
+      <h1>Cookbook</h1>
+      <div
+        className="tabs"
+        role="tablist"
+        aria-label="Cookbook"
+        onKeyDown={(e) => {
+          if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+          e.preventDefault();
+          const next = tab === 'saved' ? 'recent' : 'saved';
+          setTab(next);
+          document.getElementById(`cookbook-tab-${next}`)?.focus();
+        }}
+      >
+        <button id="cookbook-tab-saved" type="button" role="tab" aria-selected={tab === 'saved'} tabIndex={tab === 'saved' ? 0 : -1} className={`tab${tab === 'saved' ? ' active' : ''}`} onClick={() => setTab('saved')}>
+          Saved ({saved.length})
         </button>
-        <button type="button" role="tab" aria-selected={tab === 'recent'} className={`tab${tab === 'recent' ? ' active' : ''}`} onClick={() => setTab('recent')}>
-          🕘 Recently viewed ({recent.length})
+        <button id="cookbook-tab-recent" type="button" role="tab" aria-selected={tab === 'recent'} tabIndex={tab === 'recent' ? 0 : -1} className={`tab${tab === 'recent' ? ' active' : ''}`} onClick={() => setTab('recent')}>
+          Recent ({recent.length})
         </button>
       </div>
 
       {list.length === 0 ? (
         <div className="empty">
-          <div className="empty-emoji">{tab === 'saved' ? '📖' : '🕘'}</div>
           <h2>{tab === 'saved' ? 'No saved recipes yet' : 'Nothing viewed yet'}</h2>
-          <p className="muted">{tab === 'saved' ? 'Tap “Save” on any recipe to keep it here.' : 'Recipes you open will show up here.'}</p>
+          <p className="muted">{tab === 'saved' ? 'Save a recipe and it stays in this browser.' : 'Recipes you open will show up here.'}</p>
           <a href={href('/plan')} className="btn btn-primary">
             Find something to cook
           </a>

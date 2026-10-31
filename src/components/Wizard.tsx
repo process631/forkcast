@@ -5,46 +5,50 @@ import { answersStore, dietMemory, useStore } from '../lib/store';
 import type { Answers, MealId } from '../lib/types';
 import { goBack, navigate } from '../router';
 
-/** Routes: /plan (meal) → /plan/kind (category) → /plan/q/0..n (questions) → /results */
+/** Routes: /plan (meal) → /plan/kind (category) → /plan/details (every optional question) → /results */
 export function Wizard({ params }: { params: string[] }) {
   const answers = useStore(answersStore);
-  const screens = buildScreens(answers);
-  const totalSteps = 2 + screens.length;
-
   const update = (patch: Partial<Answers>) => answersStore.set((prev) => ({ ...prev, ...patch }));
 
-  // Guard against deep links that skip required steps.
   useEffect(() => {
-    if (params[0] === 'kind' && !answers.meal) navigate('/plan', { replace: true });
-    if (params[0] === 'q' && (!answers.meal || !answers.category)) navigate(answers.meal ? '/plan/kind' : '/plan', { replace: true });
+    const step = params[0];
+    if (!step) return;
+    if (!answers.meal) {
+      navigate('/plan', { replace: true });
+      return;
+    }
+    if (step === 'q') {
+      navigate(answers.category ? '/plan/details' : '/plan/kind', { replace: true });
+      return;
+    }
+    if ((step === 'kind' || step === 'details') && step === 'details' && !answers.category) {
+      navigate('/plan/kind', { replace: true });
+    }
   }, [params, answers.meal, answers.category]);
 
   if (params[0] === 'kind') {
     return (
-      <WizardFrame step={1} total={totalSteps} canSkip={false}>
+      <WizardFrame step={1}>
         <CategoryStep answers={answers} onPick={(category) => {
           update({ category, styles: category === answers.category ? answers.styles : [] });
-          navigate('/plan/q/0');
+          navigate('/plan/details');
         }} />
       </WizardFrame>
     );
   }
 
-  if (params[0] === 'q') {
-    const i = Math.max(0, Number(params[1]) || 0);
-    const screen = screens[i];
-    if (!screen) return null;
-    const next = () => navigate(i + 1 < screens.length ? `/plan/q/${i + 1}` : '/results');
+  if (params[0] === 'details' || params[0] === 'q') {
+    if (!answers.meal || !answers.category) return null;
     return (
-      <WizardFrame step={2 + i} total={totalSteps} canSkip>
-        <QuestionScreen key={`${screen.id}-${i}`} screen={screen} answers={answers} update={update} next={next} />
+      <WizardFrame step={2} dock>
+        <Preferences answers={answers} update={update} />
       </WizardFrame>
     );
   }
 
   return (
-    <WizardFrame step={0} total={totalSteps} canSkip={false}>
-      <StepHeading title="What are you cooking?" subtitle="Pick a meal to get started." />
+    <WizardFrame step={0}>
+      <StepHeading title="What are you cooking?" subtitle="Start with a meal. You can refine it on the next two screens." />
       <div className="option-grid option-grid-lg">
         {MEALS.map((m) => (
           <OptionButton
@@ -64,26 +68,27 @@ export function Wizard({ params }: { params: string[] }) {
   );
 }
 
-function WizardFrame({ step, total, canSkip, children }: { step: number; total: number; canSkip: boolean; children: ReactNode }) {
-  const pct = Math.round((step / total) * 100);
+function WizardFrame({ step, dock, children }: { step: number; dock?: boolean; children: ReactNode }) {
+  const total = 3;
+  const pct = Math.round(((step + 1) / total) * 100);
   return (
     <div className="container page wizard">
       <div className="wizard-top">
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => goBack('/')}>
-          ← Back
+          Back
         </button>
-        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={step} aria-label={`Step ${step + 1} of ${total}`}>
-          <div className="progress-fill" style={{ width: `${Math.max(pct, 4)}%` }} />
+        <div className="progress" role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={step + 1} aria-label={`Step ${step + 1} of ${total}`}>
+          <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
         <span className="progress-text">
-          {step + 1}/{total}
+          {step + 1} of {total}
         </span>
       </div>
       <div className="wizard-body">{children}</div>
-      {canSkip && (
-        <div className="wizard-skip">
-          <button type="button" className="link-btn" onClick={() => navigate('/results')}>
-            Skip the rest — show me options →
+      {dock && (
+        <div className="wizard-bar">
+          <button type="button" className="btn btn-primary btn-lg" onClick={() => navigate('/results')}>
+            See recipes
           </button>
         </div>
       )}
@@ -106,12 +111,12 @@ function StepHeading({ title, subtitle }: { title: string; subtitle?: string }) 
   );
 }
 
-function OptionButton({ option, selected, onClick, small }: { option: Option; selected: boolean; onClick: () => void; small?: boolean }) {
+function OptionButton({ option, selected, onClick }: { option: Option; selected: boolean; onClick: () => void }) {
   return (
-    <button type="button" className={`option-card${small ? ' option-card-sm' : ''}${selected ? ' selected' : ''}`} aria-pressed={selected} onClick={onClick}>
+    <button type="button" className={`option-card${selected ? ' selected' : ''}`} aria-pressed={selected} onClick={onClick}>
       {option.emoji && <span className="option-emoji" aria-hidden="true">{option.emoji}</span>}
       <span className="option-label">{option.label}</span>
-      {option.hint && !small && <span className="option-hint">{option.hint}</span>}
+      {option.hint && <span className="option-hint">{option.hint}</span>}
       {selected && <span className="option-check" aria-hidden="true">✓</span>}
     </button>
   );
@@ -123,7 +128,7 @@ function CategoryStep({ answers, onPick }: { answers: Answers; onPick: (id: stri
   const meal = getMeal(answers.meal);
   return (
     <>
-      <StepHeading title={`What kind of ${meal?.id === 'dessert' ? 'dessert' : 'food'}?`} subtitle={meal ? `${meal.emoji} ${meal.label}` : undefined} />
+      <StepHeading title={meal?.id === 'dessert' ? 'What kind of dessert?' : 'What kind of food?'} subtitle={meal ? `${meal.label}. Pick one, then set any preferences.` : undefined} />
       <div className="option-grid">
         {main.map((c) => (
           <OptionButton key={c.id} option={c} selected={answers.category === c.id} onClick={() => onPick(c.id)} />
@@ -132,7 +137,7 @@ function CategoryStep({ answers, onPick }: { answers: Answers; onPick: (id: stri
       {more.length > 0 && (
         <div className="more-block">
           <button type="button" className="link-btn" onClick={() => setShowMore((s) => !s)} aria-expanded={showMore}>
-            {showMore ? 'Fewer ideas ▴' : `More ideas (${more.length}) ▾`}
+            {showMore ? 'Show fewer' : `More ideas (${more.length})`}
           </button>
           {showMore && (
             <div className="option-grid">
@@ -147,146 +152,156 @@ function CategoryStep({ answers, onPick }: { answers: Answers; onPick: (id: stri
   );
 }
 
-function toggle(list: string[], id: string, exclusive?: string): string[] {
-  if (id === exclusive) return [];
+function toggle(list: string[], id: string): string[] {
   return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
 }
 
-function QuestionScreen({ screen, answers, update, next }: { screen: Screen; answers: Answers; update: (p: Partial<Answers>) => void; next: () => void }) {
-  const advance = () => setTimeout(next, 160);
+function Preferences({ answers, update }: { answers: Answers; update: (p: Partial<Answers>) => void }) {
+  const screens = buildScreens(answers);
+  return (
+    <>
+      <StepHeading title="Any preferences?" subtitle="Everything here is optional. See recipes whenever you are ready." />
+      {screens.map((screen) => (
+        <PreferenceSection key={screen.id === 'style' ? `style-${screen.question.id}` : screen.id} screen={screen} answers={answers} update={update} />
+      ))}
+    </>
+  );
+}
 
+function PreferenceSection({ screen, answers, update }: { screen: Screen; answers: Answers; update: (p: Partial<Answers>) => void }) {
   switch (screen.id) {
     case 'style': {
       const q = screen.question;
       const cat = getCategory(answers.category);
       return (
-        <>
-          <StepHeading title={q.title} subtitle={`${cat?.emoji ?? ''} ${cat?.label ?? ''}${q.multi ? ' · pick any' : ''}`} />
-          <div className="option-grid">
-            {q.options.map((o) => (
-              <OptionButton
-                key={o.id}
-                option={o}
-                selected={answers.styles.includes(o.id)}
-                onClick={() => {
-                  if (q.multi) update({ styles: toggle(answers.styles, o.id) });
-                  else {
-                    update({ styles: o.id === 'either' ? [] : [o.id] });
-                    advance();
-                  }
-                }}
-              />
-            ))}
-          </div>
-          {q.multi && <NextButton onClick={next} hasSelection={answers.styles.length > 0} />}
-        </>
+        <ChoiceGroup label={q.title} hint={cat ? `${cat.label}${q.multi ? ' · choose any' : ' · choose one'}` : undefined}>
+          {q.options.map((o) => (
+            <Choice
+              key={o.id}
+              selected={o.id === 'either' ? answers.styles.length === 0 : answers.styles.includes(o.id)}
+              onClick={() => {
+                if (q.multi) update({ styles: toggle(answers.styles, o.id) });
+                else update({ styles: o.id === 'either' ? [] : [o.id] });
+              }}
+            >
+              {o.label}
+            </Choice>
+          ))}
+        </ChoiceGroup>
       );
     }
     case 'mood':
       return (
-        <>
-          <StepHeading title="What flavors are you craving?" subtitle="Pick any that sound good" />
-          <div className="option-grid option-grid-sm">
-            {MOODS.map((o) => (
-              <OptionButton key={o.id} option={o} small selected={answers.moods.includes(o.id)} onClick={() => update({ moods: toggle(answers.moods, o.id) })} />
-            ))}
-          </div>
-          <NextButton onClick={next} hasSelection={answers.moods.length > 0} />
-        </>
+        <ChoiceGroup label="Flavors" hint="Choose any that sound good">
+          {MOODS.map((o) => (
+            <Choice key={o.id} selected={answers.moods.includes(o.id)} onClick={() => update({ moods: toggle(answers.moods, o.id) })}>
+              {o.label}
+            </Choice>
+          ))}
+        </ChoiceGroup>
       );
     case 'time':
       return (
-        <>
-          <StepHeading title="How much time do you have?" />
-          <div className="option-grid">
-            {TIMES.map((o) => (
-              <OptionButton key={o.id} option={o} selected={answers.time === o.id} onClick={() => { update({ time: o.id }); advance(); }} />
-            ))}
-          </div>
-        </>
+        <ChoiceGroup label="How much time do you have?">
+          {TIMES.map((o) => (
+            <Choice key={o.id} selected={answers.time === o.id} onClick={() => update({ time: o.id })}>
+              {o.label}
+            </Choice>
+          ))}
+        </ChoiceGroup>
       );
     case 'skill':
       return (
-        <>
-          <StepHeading title="How adventurous are you feeling?" />
-          <div className="option-grid">
-            {SKILLS.map((o) => (
-              <OptionButton key={o.id} option={o} selected={answers.skill === o.id} onClick={() => { update({ skill: o.id }); advance(); }} />
-            ))}
-          </div>
-        </>
+        <ChoiceGroup label="How involved should it be?">
+          {SKILLS.map((o) => (
+            <Choice key={o.id} selected={answers.skill === o.id} onClick={() => update({ skill: o.id })}>
+              {o.label}
+            </Choice>
+          ))}
+        </ChoiceGroup>
       );
     case 'cuisine':
       return (
-        <>
-          <StepHeading title="Any cuisine in mind?" subtitle="Pick any, or skip for anything goes" />
-          <div className="option-grid option-grid-sm">
-            <OptionButton option={{ id: 'any', label: 'Anything goes', emoji: '🌎' }} small selected={answers.cuisines.length === 0} onClick={() => update({ cuisines: [] })} />
-            {CUISINES.map((o) => (
-              <OptionButton key={o.id} option={o} small selected={answers.cuisines.includes(o.id)} onClick={() => update({ cuisines: toggle(answers.cuisines, o.id) })} />
-            ))}
-          </div>
-          <NextButton onClick={next} hasSelection={answers.cuisines.length > 0} />
-        </>
+        <ChoiceGroup label="Cuisine" hint="Leave this open for anything">
+          <Choice selected={answers.cuisines.length === 0} onClick={() => update({ cuisines: [] })}>
+            Anything
+          </Choice>
+          {CUISINES.map((o) => (
+            <Choice key={o.id} selected={answers.cuisines.includes(o.id)} onClick={() => update({ cuisines: toggle(answers.cuisines, o.id) })}>
+              {o.label}
+            </Choice>
+          ))}
+        </ChoiceGroup>
       );
     case 'diet':
       return (
-        <>
-          <StepHeading title="Any diets or allergies?" subtitle="These are strict filters. We’ll remember them for next time." />
-          <div className="option-grid option-grid-sm">
-            <OptionButton option={{ id: 'none', label: 'None', emoji: '👍' }} small selected={answers.diets.length === 0} onClick={() => { update({ diets: [] }); dietMemory.set((d) => ({ ...d, diets: [] })); }} />
-            {DIETS.map((o) => (
-              <OptionButton
-                key={o.id}
-                option={o}
-                small
-                selected={answers.diets.includes(o.id)}
-                onClick={() => {
-                  const diets = toggle(answers.diets, o.id);
-                  update({ diets });
-                  dietMemory.set((d) => ({ ...d, diets }));
-                }}
-              />
-            ))}
-          </div>
-          <p className="fine-print">Allergy filtering is based on ingredient names. Always double-check labels for serious allergies.</p>
-          <NextButton onClick={next} hasSelection={answers.diets.length > 0} />
-        </>
+        <ChoiceGroup label="Diets and allergies" hint="These are strict filters, and Forkcast remembers them. Matching uses ingredient names, so check labels for a serious allergy.">
+          <Choice
+            selected={answers.diets.length === 0}
+            onClick={() => {
+              update({ diets: [] });
+              dietMemory.set((d) => ({ ...d, diets: [] }));
+            }}
+          >
+            None
+          </Choice>
+          {DIETS.map((o) => (
+            <Choice
+              key={o.id}
+              selected={answers.diets.includes(o.id)}
+              onClick={() => {
+                const diets = toggle(answers.diets, o.id);
+                update({ diets });
+                dietMemory.set((d) => ({ ...d, diets }));
+              }}
+            >
+              {o.label}
+            </Choice>
+          ))}
+        </ChoiceGroup>
       );
     case 'pantry':
       return (
-        <>
-          <StepHeading title="Anything to use up — or avoid?" subtitle="Optional: type an ingredient and press Enter" />
+        <fieldset className="pref-group">
+          <legend>Ingredients</legend>
+          <p className="pref-hint">Type an ingredient and press Enter, or tap a suggestion.</p>
           <ChipInput
-            label="🧺 Ingredients I want to use"
+            label="Use up"
             values={answers.include}
             suggestions={QUICK_INGREDIENTS}
             onChange={(include) => update({ include })}
-            placeholder="e.g. spinach, chicken…"
+            placeholder="spinach, chicken"
           />
           <ChipInput
-            label="🚫 Ingredients to avoid"
+            label="Avoid"
             values={answers.avoid}
             suggestions={['mushrooms', 'olives', 'cilantro', 'onions', 'shellfish', 'coconut', 'blue cheese']}
             onChange={(avoid) => {
               update({ avoid });
               dietMemory.set((d) => ({ ...d, avoid }));
             }}
-            placeholder="e.g. olives, cilantro…"
+            placeholder="olives, cilantro"
           />
-          <NextButton onClick={next} hasSelection={answers.include.length + answers.avoid.length > 0} />
-        </>
+        </fieldset>
       );
   }
 }
 
-function NextButton({ onClick, hasSelection }: { onClick: () => void; hasSelection: boolean }) {
+function ChoiceGroup({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <div className="wizard-next">
-      <button type="button" className={`btn ${hasSelection ? 'btn-primary' : 'btn-ghost'} btn-lg`} onClick={onClick}>
-        {hasSelection ? 'Next →' : 'Skip →'}
-      </button>
-    </div>
+    <fieldset className="pref-group">
+      <legend>{label}</legend>
+      {hint && <p className="pref-hint">{hint}</p>}
+      <div className="choice-row">{children}</div>
+    </fieldset>
+  );
+}
+
+function Choice({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" className={`choice${selected ? ' selected' : ''}`} aria-pressed={selected} onClick={onClick}>
+      {children}
+    </button>
   );
 }
 
@@ -310,7 +325,7 @@ function ChipInput({ label, values, onChange, suggestions, placeholder }: { labe
           <span key={v} className="chip chip-removable">
             {v}
             <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Remove ${v}`}>
-              ✕
+              <span aria-hidden="true">×</span>
             </button>
           </span>
         ))}
@@ -336,7 +351,7 @@ function ChipInput({ label, values, onChange, suggestions, placeholder }: { labe
           .slice(0, 8)
           .map((s) => (
             <button key={s} type="button" className="chip chip-add" onClick={() => add(s)}>
-              + {s}
+              {s}
             </button>
           ))}
       </div>

@@ -8,12 +8,12 @@ Forkcast is a static web app for the moment you open the fridge and still do not
 
 It is free, has no account, and runs entirely in the browser. The catalog is 790+ recipes from [TheMealDB](https://www.themealdb.com), with photos and videos.
 
-![Forkcast home, asking what to cook and offering a meal to start from](docs/screenshots/home.png)
+![Forkcast home, with Find a recipe as the main action and a meal to start from](docs/screenshots/home.png)
 
 ## Features
 
 - **Guided choices.** Breakfast, lunch, dinner, sides, snacks, or dessert, then a kind of food that changes with the meal (pasta, chicken, sandwiches, soups, sweet treats, and more).
-- **Optional questions.** Flavor, time, skill, cuisine, diets and allergies, and ingredients to use up or avoid. Skip any of them, or jump straight to results.
+- **One preferences page.** After the meal and the kind of food, time, skill, diet, flavor, cuisine, and ingredients sit on a single optional screen. **See recipes** stays on screen the whole time.
 - **A short list with reasons.** Each card shows a photo, time, difficulty, cuisine, and why it matched. "Show me different options" shuffles in fresh picks and keeps near-duplicates apart.
 - **Cook the recipe.** Check off ingredients, see which ones each step uses, start a timer from a duration in the instructions ("simmer 20 minutes"), watch the video, copy a shopping list, or print.
 - **Cook mode.** One step at a time, large type, keyboard and swipe navigation, and a screen wake lock on secure origins.
@@ -42,7 +42,7 @@ The address bar uses a hash router (`#/plan`, `#/recipe/mdb-52772`), so the buil
 Home or "Decide"
   → meal
   → kind of food          src/data/taxonomy.ts
-  → optional questions    src/lib/questions.ts
+  → one preferences page  src/lib/questions.ts
   → ranked recipes        src/lib/match.ts
   → recipe page
   → cook mode
@@ -96,11 +96,13 @@ Every push to `main` runs the GitHub Pages workflow: `npm ci`, `npm test`, `npm 
 
 ## Usage
 
-1. On the home page, choose **Help me decide**, **Surprise me**, or a meal card. The highlighted meal follows the time of day.
+1. On the home page, choose **Find a recipe**, **Surprise me**, or a meal card. The highlighted meal follows the time of day.
 2. Pick a kind of food. Open **More ideas** if the first row is not it.
-3. Answer or skip flavor, time, skill, cuisine, diet, and pantry questions.
+3. On **Any preferences?**, set only what matters. **See recipes** is fixed to the bottom of the screen.
 4. Open a recipe from the results. **Start cooking** enters cook mode. Arrow keys, the space bar, or a swipe move between steps. Escape leaves cook mode.
 5. **Save** stores the recipe in the cookbook. Settings can refresh the downloaded catalog or clear the cookbook. Both live only in this browser.
+
+![Optional preferences on one page, with See recipes fixed along the bottom](docs/screenshots/preferences.png)
 
 ![Results for a dinner search, with photos and the reasons each recipe matched](docs/screenshots/results.png)
 

@@ -50,8 +50,8 @@ export function App() {
     default:
       content = (
         <div className="container page empty">
-          <div className="empty-emoji">🥄</div>
-          <h1>This page wandered off</h1>
+          <h1>Page not found</h1>
+          <p className="muted">That address doesn’t match a page in Forkcast.</p>
           <a href={href('/')} className="btn btn-primary">
             Go home
           </a>
@@ -70,7 +70,7 @@ export function App() {
       </main>
       <footer className="site-footer no-print">
         <div className="container">
-          Made with 🍴 by Forkcast · Recipes from TheMealDB
+          Forkcast · Recipes from TheMealDB
         </div>
       </footer>
       <TimerTray />

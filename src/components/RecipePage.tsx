@@ -19,7 +19,6 @@ export function RecipePage({ id }: { id: string }) {
   if (state.status === 'loading') {
     return (
       <div className="container page center-page">
-        <div className="cooking-loader" aria-hidden="true">🍳</div>
         <Spinner label={state.message} />
       </div>
     );
@@ -77,35 +76,35 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
 
   return (
     <article className="container page recipe">
-      <button type="button" className="btn btn-ghost btn-sm back-btn no-print" onClick={() => goBack('/results')}>
-        ← Back
+        <button type="button" className="btn btn-ghost btn-sm back-btn no-print" onClick={() => goBack('/results')}>
+        Back
       </button>
 
       <header className="recipe-header">
         <DishHero recipe={recipe} />
         <div className="recipe-intro">
-          <p className="eyebrow">📚 {recipe.category ?? 'Recipe'} · TheMealDB</p>
+          <p className="eyebrow">{recipe.category ?? 'Recipe'} · TheMealDB</p>
           <h1 className="recipe-title">{recipe.title}</h1>
           <RecipeMeta recipe={recipe} />
           <div className="recipe-actions no-print">
             <a href={href(`/cook/${recipe.id}`)} className="btn btn-primary btn-lg">
-              👩‍🍳 Start cooking
+              Start cooking
             </a>
             <button type="button" className={`btn btn-lg ${isSaved ? 'btn-saved' : 'btn-ghost'}`} onClick={() => toggleSaved(recipe)} aria-pressed={isSaved}>
-              {isSaved ? '❤️ Saved' : '🤍 Save'}
+              {isSaved ? 'Saved' : 'Save'}
             </button>
           </div>
           <div className="recipe-actions-secondary no-print">
             {recipe.youtube && (
               <a href="#video" className="btn btn-soft btn-sm" onClick={(e) => { e.preventDefault(); document.getElementById('video')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                ▶ Watch the video
+                Watch the video
               </a>
             )}
             <button type="button" className="btn btn-soft btn-sm" onClick={copyList}>
-              {copied ? '✓ Copied!' : '🛒 Copy shopping list'}
+              {copied ? 'Copied' : 'Copy shopping list'}
             </button>
             <button type="button" className="btn btn-soft btn-sm" onClick={() => window.print()}>
-              🖨️ Print
+              Print
             </button>
           </div>
         </div>
